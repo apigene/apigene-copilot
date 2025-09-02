@@ -18,9 +18,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "better-chatbot",
+  title: "Apigene MCP Client",
   description:
-    "Better Chatbot is a chatbot that uses the Tools to answer questions.",
+    "Apigene MCP Client uses the Tools to answer questions.",
 };
 
 // const themes = BASE_THEMES.flatMap((t) => [t, `${t}-dark`]);
