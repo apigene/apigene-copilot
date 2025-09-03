@@ -145,7 +145,7 @@ export default function MCPDashboard({ message }: { message?: string }) {
       config: {
         url: `https://dev.apigene.ai/${agent.gpt_name}/mcp`,
         headers: {
-          "apigene-api-key": `Bearer ${token}`,
+          "apigene-api-key": `${token}`,
         },
       },
       icon: () => (

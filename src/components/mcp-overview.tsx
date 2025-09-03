@@ -162,7 +162,7 @@ export function MCPOverview() {
           config: {
             url: `https://dev.apigene.ai/${agent.gpt_name}/mcp`,
             headers: {
-              "apigene-api-key": `Bearer ${token}`,
+              "apigene-api-key": `${token}`,
             },
           },
           icon: () => (
