@@ -8,6 +8,7 @@ import {
 import { Toaster } from "ui/sonner";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
+import { AccessTokenProvider } from "@/components/ui/access-token-provider";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -19,8 +20,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Apigene MCP Client",
-  description:
-    "Apigene MCP Client uses the Tools to answer questions.",
+  description: "Apigene MCP Client uses the Tools to answer questions.",
 };
 
 // const themes = BASE_THEMES.flatMap((t) => [t, `${t}-dark`]);
@@ -46,10 +46,12 @@ export default async function RootLayout({
         >
           <ThemeStyleProvider>
             <NextIntlClientProvider>
-              <div id="root">
-                {children}
-                <Toaster richColors />
-              </div>
+              <AccessTokenProvider>
+                <div id="root">
+                  {children}
+                  <Toaster richColors />
+                </div>
+              </AccessTokenProvider>
             </NextIntlClientProvider>
           </ThemeStyleProvider>
         </ThemeProvider>

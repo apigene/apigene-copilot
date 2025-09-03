@@ -3,7 +3,7 @@ import { MCPCard } from "@/components/mcp-card";
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { MCPOverview, RECOMMENDED_MCPS } from "@/components/mcp-overview";
+import { ApigeneAgent, MCPOverview } from "@/components/mcp-overview";
 
 import { Skeleton } from "ui/skeleton";
 
@@ -15,7 +15,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { MCPServerInfo } from "app-types/mcp";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader, Loader2 } from "lucide-react";
 import { cn } from "lib/utils";
 import {
   DropdownMenu,
@@ -24,12 +24,19 @@ import {
   DropdownMenuTrigger,
 } from "ui/dropdown-menu";
 import { useRouter } from "next/navigation";
+import { useAccessToken } from "ui/access-token-provider";
+import { Avatar, AvatarImage } from "ui/avatar";
+
+const BRANDFETCH_CLIENT_ID = "1idy-5x7B4rsvDDat7C";
 
 const LightRays = dynamic(() => import("@/components/ui/light-rays"), {
   ssr: false,
 });
 
 export default function MCPDashboard({ message }: { message?: string }) {
+  const { token } = useAccessToken();
+  const [apigeneAgents, setApigeneAgents] = useState<ApigeneAgent[]>([]);
+  const [isAgentsLoading, setIsAgentsLoading] = useState(false);
   const t = useTranslations("MCP");
   const router = useRouter();
   const {
@@ -50,14 +57,14 @@ export default function MCPDashboard({ message }: { message?: string }) {
   }, [mcpList]);
 
   const displayIcons = useMemo(() => {
-    const shuffled = [...RECOMMENDED_MCPS].sort(() => 0.5 - Math.random());
+    const shuffled = [...apigeneAgents].sort(() => 0.5 - Math.random());
     return shuffled.slice(0, 5);
-  }, []);
+  }, [apigeneAgents]);
 
   // Delay showing validating spinner until validating persists for 500ms
   const [showValidating, setShowValidating] = useState(false);
 
-  const handleRecommendedSelect = (mcp: (typeof RECOMMENDED_MCPS)[number]) => {
+  const handleRecommendedSelect = (mcp: ApigeneAgent) => {
     const params = new URLSearchParams();
     params.set("name", mcp.name);
     params.set("config", JSON.stringify(mcp.config));
@@ -99,7 +106,57 @@ export default function MCPDashboard({ message }: { message?: string }) {
         id: "mcp-list-message",
       });
     }
+    if (!token) {
+      toast(
+        <p className="whitespace-pre-wrap break-all">
+          Please set your access token to see the list of MCP servers
+        </p>,
+        {
+          id: "mcp-list-message",
+        },
+      );
+    }
   }, []);
+
+  useEffect(() => {
+    if (token) {
+      setIsAgentsLoading(true);
+      fetchApigeneAgents();
+    }
+  }, [token]);
+
+  const fetchApigeneAgents = async () => {
+    const response = await fetch(
+      "https://dev.apigene.ai/api/gpts/list?include_private_gpts=false&include_public_gpts=true",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+    const data = await response.json();
+    const getIconUrl = (icon_url: string) => {
+      const domain = icon_url.replace("https://logo.clearbit.com/", "");
+      return `https://cdn.brandfetch.io/${encodeURIComponent(domain)}?c=${BRANDFETCH_CLIENT_ID}&fallback=https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}`;
+    };
+    const agentConfigs = data.map((agent: any) => ({
+      name: agent.gpt_name,
+      label: agent.gpt_name,
+      config: {
+        url: `https://dev.apigene.ai/${agent.gpt_name}/mcp`,
+        headers: {
+          "apigene-api-key": `Bearer ${token}`,
+        },
+      },
+      icon: () => (
+        <Avatar className="size-5 rounded-full">
+          <AvatarImage src={getIconUrl(agent.icon)} />
+        </Avatar>
+      ),
+    }));
+    setApigeneAgents(agentConfigs);
+    setIsAgentsLoading(false);
+  };
 
   return (
     <>
@@ -124,33 +181,35 @@ export default function MCPDashboard({ message }: { message?: string }) {
                       className="gap-1 data-[state=open]:bg-muted data-[state=open]:text-foreground text-muted-foreground"
                     >
                       <div className="flex -space-x-2">
-                        {displayIcons.map((mcp, index) => {
-                          const Icon = mcp.icon;
-                          return (
-                            <div
-                              key={mcp.name}
-                              className="relative rounded-full bg-background border-[1px] p-1"
-                              style={{
-                                zIndex: displayIcons.length - index,
-                              }}
-                            >
-                              <Icon className="size-3" />
-                            </div>
-                          );
-                        })}
+                        {isAgentsLoading ? (
+                          <Loader className="size-8 z-20 animate-spin" />
+                        ) : (
+                          displayIcons.map((mcp, index) => {
+                            return (
+                              <div
+                                key={mcp.name}
+                                className="relative rounded-full bg-background border-[1px] p-1"
+                                style={{
+                                  zIndex: displayIcons.length - index,
+                                }}
+                              >
+                                <mcp.icon />
+                              </div>
+                            );
+                          })
+                        )}
                       </div>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
-                    {RECOMMENDED_MCPS.map((mcp) => {
-                      const Icon = mcp.icon;
+                    {apigeneAgents.map((mcp) => {
                       return (
                         <DropdownMenuItem
                           key={mcp.name}
                           onClick={() => handleRecommendedSelect(mcp)}
                           className="cursor-pointer"
                         >
-                          <Icon className="size-4 mr-2" />
+                          <mcp.icon />
                           <span>{mcp.label}</span>
                         </DropdownMenuItem>
                       );

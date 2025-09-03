@@ -1,5 +1,5 @@
 "use client";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Loader } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { MCPIcon } from "ui/mcp-icon";
@@ -15,6 +15,23 @@ import { Button } from "ui/button";
 import { AtlassianIcon } from "ui/atlassian-icon";
 import { AsanaIcon } from "ui/asana-icon";
 import { GithubIcon } from "ui/github-icon";
+import { useEffect, useState } from "react";
+import { useAccessToken } from "ui/access-token-provider";
+import { Avatar, AvatarImage } from "ui/avatar";
+
+const BRANDFETCH_CLIENT_ID = "1idy-5x7B4rsvDDat7C";
+
+export type ApigeneAgent = {
+  name: string;
+  label: string;
+  config: {
+    url: string;
+    headers: {
+      "apigene-api-key": string;
+    };
+  };
+  icon: () => React.ReactNode;
+};
 
 export const RECOMMENDED_MCPS = [
   {
@@ -105,12 +122,13 @@ export const RECOMMENDED_MCPS = [
 ];
 
 export function MCPOverview() {
+  const [isListLoading, setIsListLoading] = useState(false);
+  const [apigeneAgents, setApigeneAgents] = useState<ApigeneAgent[]>([]);
+  const { token } = useAccessToken();
+
   const t = useTranslations("MCP");
 
-  const handleMcpClick = (
-    e: React.MouseEvent,
-    mcp: (typeof RECOMMENDED_MCPS)[number],
-  ) => {
+  const handleMcpClick = (e: React.MouseEvent, mcp: ApigeneAgent) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -120,6 +138,47 @@ export function MCPOverview() {
 
     window.location.href = `/mcp/create?${params.toString()}`;
   };
+
+  useEffect(() => {
+    const fetchApigeneAgents = async () => {
+      setIsListLoading(true);
+      try {
+        const response = await fetch(
+          "https://dev.apigene.ai/api/gpts/list?include_private_gpts=false&include_public_gpts=true",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+        const data = await response.json();
+        const getIconUrl = (icon_url: string) => {
+          const domain = icon_url.replace("https://logo.clearbit.com/", "");
+          return `https://cdn.brandfetch.io/${encodeURIComponent(domain)}?c=${BRANDFETCH_CLIENT_ID}&fallback=https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}`;
+        };
+        const agentConfigs = data.map((agent: any) => ({
+          name: agent.gpt_name,
+          label: agent.gpt_name,
+          config: {
+            url: `https://dev.apigene.ai/${agent.gpt_name}/mcp`,
+            headers: {
+              "apigene-api-key": `Bearer ${token}`,
+            },
+          },
+          icon: () => (
+            <Avatar className="size-5 rounded-full">
+              <AvatarImage src={getIconUrl(agent.icon)} />
+            </Avatar>
+          ),
+        }));
+        setApigeneAgents(agentConfigs);
+        setIsListLoading(false);
+      } catch (_error) {
+        setIsListLoading(false);
+      }
+    };
+    fetchApigeneAgents();
+  }, []);
 
   return (
     <div className="flex flex-col gap-4">
@@ -141,9 +200,21 @@ export function MCPOverview() {
             {t("addMcpServer")}
             <ArrowUpRight className="size-6" />
           </div>
+
+          {!token && (
+            <div className="flex flex-col gap-4">
+              <p className="text-sm text-destructive">
+                Please set your access token to see the list of MCP servers
+              </p>
+            </div>
+          )}
+
+          {/* While Agents list is loading, show a loading spinner */}
+          {isListLoading && <Loader className="size-8 z-20 animate-spin" />}
         </div>
+
         <div className="flex gap-2 flex-wrap">
-          {RECOMMENDED_MCPS.map((mcp) => (
+          {apigeneAgents.map((mcp) => (
             <Button
               key={mcp.name}
               variant={"secondary"}

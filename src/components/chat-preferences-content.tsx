@@ -3,9 +3,9 @@ import { useObjectState } from "@/hooks/use-object-state";
 import { UserPreferences } from "app-types/user";
 import { authClient } from "auth/client";
 import { fetcher } from "lib/utils";
-import { AlertCircle, ArrowLeft, Loader } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader, Eye, EyeOff } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 import useSWR from "swr";
 import { safe } from "ts-safe";
@@ -19,6 +19,7 @@ import { Textarea } from "ui/textarea";
 import { McpServerCustomizationContent } from "./mcp-customization-popup";
 import { MCPServerInfo } from "app-types/mcp";
 import { useMcpList } from "@/hooks/queries/use-mcp-list";
+import { useAccessToken } from "ui/access-token-provider";
 
 export function UserInstructionsContent() {
   const t = useTranslations();
@@ -220,6 +221,16 @@ export function MCPInstructionsContent() {
 
   const { isLoading, data: mcpList } = useMcpList();
 
+  // Access token management
+  const { token, setToken, clearToken } = useAccessToken();
+  const [tokenInput, setTokenInput] = useState(token || "");
+  const [showToken, setShowToken] = useState(false);
+
+  // Sync token input with current token
+  useEffect(() => {
+    setTokenInput(token || "");
+  }, [token]);
+
   if (mcpServer) {
     return (
       <McpServerCustomizationContent
@@ -250,6 +261,71 @@ export function MCPInstructionsContent() {
       </p>
 
       <div className="flex flex-col gap-6 w-full">
+        {/* Access Token Configuration */}
+        <div className="flex flex-col gap-2">
+          <Label className="text-sm font-medium">
+            Access Token Configuration
+          </Label>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Input
+                type={showToken ? "text" : "password"}
+                value={tokenInput}
+                onChange={(e) => setTokenInput(e.target.value)}
+                placeholder="Enter your access token..."
+                className="pr-10"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                onClick={() => setShowToken(!showToken)}
+              >
+                {showToken ? (
+                  <EyeOff className="h-3 w-3" />
+                ) : (
+                  <Eye className="h-3 w-3" />
+                )}
+              </Button>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (tokenInput.trim()) {
+                  setToken(tokenInput.trim());
+                }
+              }}
+              disabled={!tokenInput.trim()}
+            >
+              Set Token
+            </Button>
+            {token && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  clearToken();
+                  setTokenInput("");
+                }}
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+          {token && (
+            <p className="text-xs text-green-600 dark:text-green-400">
+              ✓ Token is set
+            </p>
+          )}
+          {!token && tokenInput && (
+            <p className="text-xs text-muted-foreground">
+              Enter your access token and click &quot;Set Token&quot; to save it
+            </p>
+          )}
+        </div>
+
         <div className="flex flex-col gap-2 text-foreground flex-1">
           <Input
             value={search}
