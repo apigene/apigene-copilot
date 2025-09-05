@@ -30,27 +30,45 @@ export async function mapClerkUserIdToUuid(
     return existingAccount[0].userId;
   }
 
-  // If no mapping exists, create a new user and account
-  const [newUser] = await db
-    .insert(UserSchema)
-    .values({
-      name: userData?.name || "User",
-      email: userData?.email || `${clerkUserId}@clerk.local`,
-      emailVerified: true,
-      image: userData?.image,
-    })
-    .returning({ id: UserSchema.id });
+  // If no mapping exists, check if a user with this email already exists
+  const existingUser = await db
+    .select({ id: UserSchema.id })
+    .from(UserSchema)
+    .where(
+      eq(UserSchema.email, userData?.email || `${clerkUserId}@clerk.local`),
+    )
+    .limit(1);
+
+  let userId: string;
+
+  if (existingUser.length > 0) {
+    // User already exists, use their ID
+    userId = existingUser[0].id;
+  } else {
+    // Create a new user
+    const [newUser] = await db
+      .insert(UserSchema)
+      .values({
+        name: userData?.name || "User",
+        email: userData?.email || `${clerkUserId}@clerk.local`,
+        emailVerified: true,
+        image: userData?.image,
+      })
+      .returning({ id: UserSchema.id });
+
+    userId = newUser.id;
+  }
 
   // Create account mapping
   await db.insert(AccountSchema).values({
     accountId: clerkUserId,
     providerId: "clerk",
-    userId: newUser.id,
+    userId: userId,
     createdAt: new Date(),
     updatedAt: new Date(),
   });
 
-  return newUser.id;
+  return userId;
 }
 
 /**
