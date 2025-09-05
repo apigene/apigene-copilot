@@ -4,7 +4,7 @@ import useSWR, { SWRConfiguration, useSWRConfig } from "swr";
 import { handleErrorWithToast } from "ui/shared-toast";
 import { fetcher } from "lib/utils";
 import { AgentSummary } from "app-types/agent";
-import { authClient } from "auth/client";
+import { useUser } from "auth/client";
 
 interface UseAgentsOptions extends SWRConfiguration {
   filters?: ("all" | "mine" | "shared" | "bookmarked")[];
@@ -38,12 +38,12 @@ export function useAgents(options: UseAgentsOptions = {}) {
     ...swrOptions,
   });
 
-  const { data: session } = authClient.useSession();
-  const currentUserId = session?.user?.id;
+  const { user } = useUser();
+  const currentUserId = user?.id;
 
   // Client-side filtering for additional views
   const filterAgents = (filterFn: (agent: AgentSummary) => boolean) => {
-    return agents.filter(filterFn);
+    return agents?.filter(filterFn) || [];
   };
 
   return {
@@ -62,6 +62,8 @@ export function useAgents(options: UseAgentsOptions = {}) {
     hasAgents: (
       type: "mine" | "shared" | "bookmarked" | "public" | "readonly",
     ) => {
+      if (!agents) return false;
+
       switch (type) {
         case "mine":
           return agents.some((agent) => agent.userId === currentUserId);

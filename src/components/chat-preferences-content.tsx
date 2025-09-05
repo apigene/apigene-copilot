@@ -1,7 +1,7 @@
 "use client";
 import { useObjectState } from "@/hooks/use-object-state";
 import { UserPreferences } from "app-types/user";
-import { authClient } from "auth/client";
+import { useUser } from "auth/client";
 import { fetcher } from "lib/utils";
 import { AlertCircle, ArrowLeft, Loader, Eye, EyeOff } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -45,7 +45,7 @@ export function UserInstructionsContent() {
     [],
   );
 
-  const { data: session } = authClient.useSession();
+  const { user } = useUser();
 
   const [preferences, setPreferences] = useObjectState<UserPreferences>({
     displayName: "",
@@ -116,7 +116,7 @@ export function UserInstructionsContent() {
             <Skeleton className="h-9" />
           ) : (
             <Input
-              placeholder={session?.user.name || ""}
+              placeholder={user?.fullName || ""}
               value={preferences.displayName}
               onChange={(e) => {
                 setPreferences({
@@ -367,6 +367,124 @@ export function MCPInstructionsContent() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+export function BasePromptContent() {
+  const t = useTranslations();
+
+  const basePromptExamples = useMemo(
+    () => [
+      "You are a helpful AI assistant specialized in software development and technical problem-solving.",
+      "You are an expert coding assistant that provides clear, well-documented solutions with explanations.",
+      "You are a creative writing assistant that helps users craft engaging stories and content.",
+      "You are a data analysis expert who helps interpret and visualize complex datasets.",
+    ],
+    [],
+  );
+
+  // const { data: session } = authClient.useSession();
+
+  const [preferences, setPreferences] = useObjectState<UserPreferences>({
+    baseSystemPrompt: "",
+  });
+
+  const {
+    data,
+    mutate: fetchPreferences,
+    isLoading,
+    isValidating,
+  } = useSWR<UserPreferences>("/api/user/preferences", fetcher, {
+    fallback: {},
+    dedupingInterval: 0,
+    onSuccess: (data) => {
+      setPreferences(data);
+    },
+  });
+
+  const [isSaving, setIsSaving] = useState(false);
+
+  const savePreferences = async () => {
+    safe(() => setIsSaving(true))
+      .ifOk(() =>
+        fetch("/api/user/preferences", {
+          method: "PUT",
+          body: JSON.stringify(preferences),
+        }),
+      )
+      .ifOk(() => fetchPreferences())
+      .watch((result) => {
+        if (result.isOk)
+          toast.success(t("Chat.ChatPreferences.preferencesSaved"));
+        else toast.error(t("Chat.ChatPreferences.failedToSavePreferences"));
+      })
+      .watch(() => setIsSaving(false));
+  };
+
+  const isDiff = useMemo(() => {
+    if ((data?.baseSystemPrompt || "") !== (preferences.baseSystemPrompt || ""))
+      return true;
+    return false;
+  }, [preferences, data]);
+
+  return (
+    <div className="flex flex-col">
+      <h3 className="text-xl font-semibold">
+        {t("Chat.ChatPreferences.baseSystemPrompt")}
+      </h3>
+      <p className="text-sm text-muted-foreground py-2 pb-6">
+        {t("Chat.ChatPreferences.baseSystemPromptDescription")}
+      </p>
+
+      <div className="flex flex-col gap-6 w-full">
+        <div className="flex flex-col gap-2 text-foreground">
+          <Label>{t("Chat.ChatPreferences.customizeBaseSystemPrompt")}</Label>
+          <span className="text-xs text-muted-foreground">
+            {t("Chat.ChatPreferences.baseSystemPromptHelpText")}
+          </span>
+          <div className="relative w-full">
+            {isLoading ? (
+              <Skeleton className="h-60" />
+            ) : (
+              <>
+                <Textarea
+                  className="h-60 resize-none"
+                  value={preferences.baseSystemPrompt}
+                  onChange={(e) => {
+                    setPreferences({
+                      baseSystemPrompt: e.target.value,
+                    });
+                  }}
+                />
+                {!preferences.baseSystemPrompt && (
+                  <div className="absolute left-0 top-0 w-full h-full py-3 px-3 pointer-events-none">
+                    <div className="text-sm text-muted-foreground">
+                      <div className="mb-2 font-medium">
+                        Example base prompts:
+                      </div>
+                      {basePromptExamples.map((example, index) => (
+                        <div key={index} className="mb-1 text-xs opacity-70">
+                          {example}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+      {isDiff && !isValidating && (
+        <div className="flex pt-4 items-center justify-end fade-in animate-in duration-300">
+          <Button variant="ghost">{t("Common.cancel")}</Button>
+          <Button disabled={isSaving || isLoading} onClick={savePreferences}>
+            {t("Common.save")}
+            {isSaving && <Loader className="size-4 ml-2 animate-spin" />}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

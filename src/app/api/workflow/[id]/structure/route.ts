@@ -1,4 +1,4 @@
-import { getSession } from "auth/server";
+import { ensureUserExists } from "auth/server";
 import { workflowRepository } from "lib/db/repository";
 
 export async function GET(
@@ -6,8 +6,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const session = await getSession();
-  const hasAccess = await workflowRepository.checkAccess(id, session.user.id);
+  const user = await ensureUserExists();
+  if (!user) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+  const hasAccess = await workflowRepository.checkAccess(id, user.id);
   if (!hasAccess) {
     return new Response("Unauthorized", { status: 401 });
   }
@@ -21,13 +24,12 @@ export async function POST(
 ) {
   const { nodes, edges, deleteNodes, deleteEdges } = await request.json();
   const { id } = await params;
-  const session = await getSession();
+  const user = await ensureUserExists();
+  if (!user) {
+    return new Response("Unauthorized", { status: 401 });
+  }
 
-  const hasAccess = await workflowRepository.checkAccess(
-    id,
-    session.user.id,
-    false,
-  );
+  const hasAccess = await workflowRepository.checkAccess(id, user.id, false);
   if (!hasAccess) {
     return new Response("Unauthorized", { status: 401 });
   }

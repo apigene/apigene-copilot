@@ -1,6 +1,6 @@
 "use client";
 import { EditWorkflowPopup } from "@/components/workflow/edit-workflow-popup";
-import { authClient } from "auth/client";
+import { useUser } from "auth/client";
 
 import { ArrowUpRight, ChevronDown, MousePointer2 } from "lucide-react";
 
@@ -65,8 +65,8 @@ const createWithExample = async (exampleWorkflow: {
 export default function WorkflowPage() {
   const t = useTranslations();
   const router = useRouter();
-  const { data: session } = authClient.useSession();
-  const currentUserId = session?.user?.id;
+  const { user } = useUser();
+  const currentUserId = user?.id;
   const [isVisibilityChangeLoading, setIsVisibilityChangeLoading] =
     useState(false);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);

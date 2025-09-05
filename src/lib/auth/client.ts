@@ -1,5 +1,10 @@
 "use client";
 
-import { createAuthClient } from "better-auth/react"; // make sure to import from better-auth/react
+import { clerkClientAdapter } from "./clerk/client-adapter";
+import { AuthClient } from "./types";
 
-export const authClient = createAuthClient();
+// Maintain existing API
+export const authClient: AuthClient = clerkClientAdapter.createAuthClient();
+
+// Export Clerk hooks for direct usage
+export { useUser, useClerk } from "@clerk/nextjs";

@@ -90,7 +90,14 @@ export async function POST(request: NextRequest) {
 
     const systemPrompt = mergeSystemPrompt(
       buildSpeechSystemPrompt(
-        session.user,
+        {
+          id: session.user.id,
+          email: session.user.email ?? "",
+          emailVerified: false,
+          name: session.user.name ?? "",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
         userPreferences ?? undefined,
         agent,
       ),

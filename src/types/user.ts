@@ -5,6 +5,7 @@ export type UserPreferences = {
   profession?: string; // User's job or profession
   responseStyleExample?: string; // Example of preferred response style
   botName?: string; // Name of the bot
+  baseSystemPrompt?: string; // Custom base system prompt
 };
 
 export type User = {
@@ -37,4 +38,5 @@ export const UserPreferencesZodSchema = z.object({
   profession: z.string().optional(),
   responseStyleExample: z.string().optional(),
   botName: z.string().optional(),
+  baseSystemPrompt: z.string().optional(),
 });

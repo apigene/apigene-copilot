@@ -7,6 +7,9 @@ export async function GET(
 ) {
   const { id } = await params;
   const session = await getSession();
+  if (!session) {
+    return new Response("Unauthorized", { status: 401 });
+  }
   const hasAccess = await workflowRepository.checkAccess(id, session.user.id);
   if (!hasAccess) {
     return new Response("Unauthorized", { status: 401 });
@@ -23,6 +26,9 @@ export async function PUT(
   const { visibility, isPublished } = await request.json();
 
   const session = await getSession();
+  if (!session) {
+    return new Response("Unauthorized", { status: 401 });
+  }
   const hasAccess = await workflowRepository.checkAccess(
     id,
     session.user.id,
@@ -55,6 +61,9 @@ export async function DELETE(
 ) {
   const { id } = await params;
   const session = await getSession();
+  if (!session) {
+    return new Response("Unauthorized", { status: 401 });
+  }
   const hasAccess = await workflowRepository.checkAccess(
     id,
     session.user.id,

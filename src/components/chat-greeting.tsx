@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { authClient } from "auth/client";
+import { useUser } from "auth/client";
 import { useMemo } from "react";
 import { FlipWords } from "ui/flip-words";
 import { useTranslations } from "next-intl";
@@ -14,25 +14,22 @@ function getGreetingByTime() {
 }
 
 export const ChatGreeting = () => {
-  const { data: session } = authClient.useSession();
-
+  const { user } = useUser();
   const t = useTranslations("Chat.Greeting");
 
-  const user = session?.user;
-
   const word = useMemo(() => {
-    if (!user?.name) return "";
+    if (!user?.fullName) return "";
     const words = [
-      t(getGreetingByTime(), { name: user.name }),
-      t("niceToSeeYouAgain", { name: user.name }),
-      t("whatAreYouWorkingOnToday", { name: user.name }),
+      t(getGreetingByTime(), { name: user.fullName }),
+      t("niceToSeeYouAgain", { name: user.fullName }),
+      t("whatAreYouWorkingOnToday", { name: user.fullName }),
       t("letMeKnowWhenYoureReadyToBegin"),
       t("whatAreYourThoughtsToday"),
       t("whereWouldYouLikeToStart"),
-      t("whatAreYouThinking", { name: user.name }),
+      t("whatAreYouThinking", { name: user.fullName }),
     ];
     return words[Math.floor(Math.random() * words.length)];
-  }, [user?.name]);
+  }, [user?.fullName]);
 
   return (
     <motion.div

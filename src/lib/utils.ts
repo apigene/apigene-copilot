@@ -14,6 +14,11 @@ export const fetcher = async (url: string, options?: RequestInit) => {
   });
 
   if (!res.ok) {
+    // Handle 401 Unauthorized gracefully - don't throw error for unauthenticated requests
+    if (res.status === 401) {
+      return null; // Return null for unauthenticated requests
+    }
+
     let errorPayload;
     try {
       errorPayload = await res.json();

@@ -159,7 +159,7 @@ export function ThreadDropdown({
                     align="start"
                     className="w-56"
                   >
-                    {archiveList.length === 0 ? (
+                    {!archiveList || archiveList.length === 0 ? (
                       <DropdownMenuItem
                         disabled
                         className="text-muted-foreground"
@@ -167,7 +167,7 @@ export function ThreadDropdown({
                         {t("Archive.noArchives")}
                       </DropdownMenuItem>
                     ) : (
-                      archiveList.map((archive) => (
+                      archiveList?.map((archive) => (
                         <DropdownMenuItem
                           key={archive.id}
                           onClick={() => handleAddToArchive(archive.id)}

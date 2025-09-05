@@ -29,40 +29,34 @@ import { useTheme } from "next-themes";
 import { appStore } from "@/app/store";
 import { BASE_THEMES } from "lib/const";
 import { capitalizeFirstLetter, cn } from "lib/utils";
-import { authClient } from "auth/client";
+import { useUser, useClerk } from "auth/client";
 import { useTranslations } from "next-intl";
-import useSWR from "swr";
 import { useThemeStyle } from "@/hooks/use-theme-style";
-import { Session, User } from "better-auth";
 
-export function AppSidebarUser({
-  session,
-}: { session?: { session: Session; user: User } }) {
+export function AppSidebarUser({ userId }: { userId?: string }) {
+  // Call all hooks at the top level, before any conditional logic
   const appStoreMutate = appStore((state) => state.mutate);
   const t = useTranslations("Layout");
+  const { user } = useUser();
+  const { signOut } = useClerk();
 
-  const user = session?.user;
+  // If no userId provided, don't render anything
+  if (!userId) {
+    return null;
+  }
 
-  const logout = () => {
-    authClient.signOut().finally(() => {
+  const logout = async () => {
+    try {
+      // Use Clerk's signOut method with explicit redirect
+      await signOut({
+        redirectUrl: window.location.origin + "/sign-in",
+      });
+    } catch (error) {
+      console.error("Sign out error:", error);
+      // Fallback: redirect to sign-in page
       window.location.href = "/sign-in";
-    });
+    }
   };
-
-  useSWR(
-    "/session-update",
-    () =>
-      authClient.getSession().then(() => {
-        console.log(`session-update: ${new Date().toISOString()}`);
-      }),
-    {
-      refreshIntervalOnFocus: false,
-      focusThrottleInterval: 1000 * 60 * 5,
-      revalidateOnFocus: false,
-      refreshWhenHidden: true,
-      refreshInterval: 1000 * 60 * 5,
-    },
-  );
 
   return (
     <SidebarMenu>
@@ -76,12 +70,16 @@ export function AppSidebarUser({
               <Avatar className="rounded-full size-8 border">
                 <AvatarImage
                   className="object-cover"
-                  src={user?.image || "/pf.png"}
-                  alt={user?.name || ""}
+                  src={user?.imageUrl || "/pf.png"}
+                  alt={user?.fullName || ""}
                 />
-                <AvatarFallback>{user?.name?.slice(0, 1) || ""}</AvatarFallback>
+                <AvatarFallback>
+                  {user?.fullName?.slice(0, 1) || ""}
+                </AvatarFallback>
               </Avatar>
-              <span className="truncate">{user?.email}</span>
+              <span className="truncate">
+                {user?.primaryEmailAddress?.emailAddress}
+              </span>
               <ChevronsUpDown className="ml-auto" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
@@ -94,17 +92,17 @@ export function AppSidebarUser({
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-full">
                   <AvatarImage
-                    src={user?.image || "/pf.png"}
-                    alt={user?.name || ""}
+                    src={user?.imageUrl || "/pf.png"}
+                    alt={user?.fullName || ""}
                   />
                   <AvatarFallback className="rounded-lg">
-                    {user?.name?.slice(0, 1) || ""}
+                    {user?.fullName?.slice(0, 1) || ""}
                   </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user?.name}</span>
+                  <span className="truncate font-medium">{user?.fullName}</span>
                   <span className="truncate text-xs text-muted-foreground">
-                    {user?.email}
+                    {user?.primaryEmailAddress?.emailAddress}
                   </span>
                 </div>
               </div>

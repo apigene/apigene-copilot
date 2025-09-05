@@ -244,56 +244,58 @@ export function AppSidebarThreads() {
                     )}
                   </SidebarGroupLabel>
 
-                  {group.threads.map((thread) => (
-                    <SidebarMenuSub
-                      key={thread.id}
-                      className={"group/thread mr-0"}
-                    >
-                      <SidebarMenuSubItem>
-                        <ThreadDropdown
-                          side="right"
-                          threadId={thread.id}
-                          beforeTitle={thread.title}
-                        >
-                          <div className="flex items-center data-[state=open]:bg-input! group-hover/thread:bg-input! rounded-lg">
-                            <Tooltip delayDuration={1000}>
-                              <TooltipTrigger asChild>
-                                <SidebarMenuButton
-                                  asChild
-                                  className="group-hover/thread:bg-transparent!"
-                                  isActive={currentThreadId === thread.id}
-                                >
-                                  <Link
-                                    href={`/chat/${thread.id}`}
-                                    className="flex items-center"
+                  {group.threads.map((thread) =>
+                    thread?.id ? (
+                      <SidebarMenuSub
+                        key={thread.id}
+                        className={"group/thread mr-0"}
+                      >
+                        <SidebarMenuSubItem>
+                          <ThreadDropdown
+                            side="right"
+                            threadId={thread.id}
+                            beforeTitle={thread.title}
+                          >
+                            <div className="flex items-center data-[state=open]:bg-input! group-hover/thread:bg-input! rounded-lg">
+                              <Tooltip delayDuration={1000}>
+                                <TooltipTrigger asChild>
+                                  <SidebarMenuButton
+                                    asChild
+                                    className="group-hover/thread:bg-transparent!"
+                                    isActive={currentThreadId === thread.id}
                                   >
-                                    {generatingTitleThreadIds.includes(
-                                      thread.id,
-                                    ) ? (
-                                      <TextShimmer className="truncate min-w-0">
-                                        {thread.title || "New Chat"}
-                                      </TextShimmer>
-                                    ) : (
-                                      <p className="truncate min-w-0">
-                                        {thread.title || "New Chat"}
-                                      </p>
-                                    )}
-                                  </Link>
-                                </SidebarMenuButton>
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-[200px] p-4 break-all overflow-y-auto max-h-[200px]">
-                                {thread.title || "New Chat"}
-                              </TooltipContent>
-                            </Tooltip>
+                                    <Link
+                                      href={`/chat/${thread.id}`}
+                                      className="flex items-center"
+                                    >
+                                      {generatingTitleThreadIds.includes(
+                                        thread.id,
+                                      ) ? (
+                                        <TextShimmer className="truncate min-w-0">
+                                          {thread.title || "New Chat"}
+                                        </TextShimmer>
+                                      ) : (
+                                        <p className="truncate min-w-0">
+                                          {thread.title || "New Chat"}
+                                        </p>
+                                      )}
+                                    </Link>
+                                  </SidebarMenuButton>
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-[200px] p-4 break-all overflow-y-auto max-h-[200px]">
+                                  {thread.title || "New Chat"}
+                                </TooltipContent>
+                              </Tooltip>
 
-                            <SidebarMenuAction className="data-[state=open]:bg-input data-[state=open]:opacity-100 opacity-0 group-hover/thread:opacity-100">
-                              <MoreHorizontal />
-                            </SidebarMenuAction>
-                          </div>
-                        </ThreadDropdown>
-                      </SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                  ))}
+                              <SidebarMenuAction className="data-[state=open]:bg-input data-[state=open]:opacity-100 opacity-0 group-hover/thread:opacity-100">
+                                <MoreHorizontal />
+                              </SidebarMenuAction>
+                            </div>
+                          </ThreadDropdown>
+                        </SidebarMenuSubItem>
+                      </SidebarMenuSub>
+                    ) : null,
+                  )}
                 </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>

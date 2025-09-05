@@ -9,6 +9,8 @@ import { Toaster } from "ui/sonner";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
 import { AccessTokenProvider } from "@/components/ui/access-token-provider";
+import { ClerkProvider } from "@clerk/nextjs";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -33,29 +35,31 @@ export default async function RootLayout({
   const locale = await getLocale();
 
   return (
-    <html lang={locale} suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          themes={["light", "dark"]}
-          storageKey="app-theme-v2"
-          disableTransitionOnChange
+    <ClerkProvider>
+      <html lang={locale} suppressHydrationWarning>
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          <ThemeStyleProvider>
-            <NextIntlClientProvider>
-              <AccessTokenProvider>
-                <div id="root">
-                  {children}
-                  <Toaster richColors />
-                </div>
-              </AccessTokenProvider>
-            </NextIntlClientProvider>
-          </ThemeStyleProvider>
-        </ThemeProvider>
-      </body>
-    </html>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            themes={["light", "dark"]}
+            storageKey="app-theme-v2"
+            disableTransitionOnChange
+          >
+            <ThemeStyleProvider>
+              <NextIntlClientProvider>
+                <AccessTokenProvider>
+                  <div id="root">
+                    {children}
+                    <Toaster richColors />
+                  </div>
+                </AccessTokenProvider>
+              </NextIntlClientProvider>
+            </ThemeStyleProvider>
+          </ThemeProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
