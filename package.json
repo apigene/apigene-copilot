@@ -145,7 +145,7 @@
   "lint-staged": {
     "*.{js,json,mjs,ts,tsx,css}": ["pnpm format", "pnpm lint:fix"]
   },
-  "packageManager": "pnpm@10.2.1",
+  "packageManager": "pnpm@8.15.5",
   "engines": {
     "node": ">=18"
   },
