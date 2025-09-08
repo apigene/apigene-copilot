@@ -16,6 +16,7 @@ export interface Session {
     id: string;
     userId: string;
   };
+  accessToken: string | null;
 }
 
 export interface User {
@@ -30,7 +31,7 @@ export interface User {
 
 export class ClerkServerAdapter {
   async getSession(): Promise<Session | null> {
-    const { userId, sessionId } = await auth();
+    const { userId, sessionId, getToken } = await auth();
 
     if (!userId || !sessionId) {
       // Don't log as error - this is expected when user is not authenticated
@@ -62,6 +63,9 @@ export class ClerkServerAdapter {
         id: sessionId,
         userId: internalUserId, // Use internal UUID instead of Clerk ID
       },
+      accessToken: await getToken({
+        template: process.env.NEXT_PUBLIC_AUTH_CLERK_JWT_TPL,
+      }),
     };
   }
 

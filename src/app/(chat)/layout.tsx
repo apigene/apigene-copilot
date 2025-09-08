@@ -15,7 +15,6 @@ export const experimental_ppr = true;
 export default async function ChatLayout({
   children,
 }: { children: React.ReactNode }) {
-  const cookieStore = await cookies();
   const user = await ensureUserExists();
 
   // Redirect to sign-in if user is not authenticated
@@ -23,6 +22,7 @@ export default async function ChatLayout({
     redirect("/sign-in");
   }
 
+  const cookieStore = await cookies();
   const isCollapsed =
     cookieStore.get(COOKIE_KEY_SIDEBAR_STATE)?.value !== "true";
 
@@ -31,7 +31,7 @@ export default async function ChatLayout({
       <AccessTokenProvider>
         <SWRConfigProvider>
           <AppPopupProvider />
-          <AppSidebar userId={user?.id} />
+          <AppSidebar userId={user.id} />
           <main className="relative bg-background w-full flex flex-col h-screen">
             <AppHeader />
             <div className="flex-1 overflow-y-auto">{children}</div>
