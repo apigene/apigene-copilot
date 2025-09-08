@@ -16,6 +16,7 @@ import {
 import { AvatarFallback, AvatarImage, Avatar } from "ui/avatar";
 import { SidebarMenuButton, SidebarMenuItem, SidebarMenu } from "ui/sidebar";
 import {
+  AppWindow,
   ChevronsUpDown,
   Command,
   LogOutIcon,
@@ -32,6 +33,7 @@ import { capitalizeFirstLetter, cn } from "lib/utils";
 import { useUser, useClerk } from "auth/client";
 import { useTranslations } from "next-intl";
 import { useThemeStyle } from "@/hooks/use-theme-style";
+import { redirect } from "next/navigation";
 
 export function AppSidebarUser({ userId }: { userId?: string }) {
   // Call all hooks at the top level, before any conditional logic
@@ -124,6 +126,14 @@ export function AppSidebarUser({ userId }: { userId?: string }) {
             >
               <Command className="size-4 text-foreground" />
               <span>{t("keyboardShortcuts")}</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => redirect("/applications")}
+            >
+              <AppWindow className="size-4 text-foreground" />
+              <span>Applications</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={logout} className="cursor-pointer">
