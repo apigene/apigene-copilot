@@ -218,39 +218,39 @@ export function ChatMentionInputSuggestion({
           });
         }
 
-        // Add tool items
-        const toolItems =
-          mcp.toolInfo
-            ?.filter(
-              (tool) =>
-                !searchValue ||
-                tool.name.toLowerCase().includes(searchValue.toLowerCase()),
-            )
-            .map((tool) => {
-              const toolId = JSON.stringify({
-                type: "mcpTool",
-                name: tool.name,
-                serverId: mcp.id,
-                description: tool.description,
-                serverName: mcp.name,
-              });
-              return {
-                id: `${mcp.id}-${tool.name}`,
-                type: "mcpTool",
-                label: tool.name,
-                onSelect: () =>
-                  onSelectMention({
-                    label: `tool("${tool.name}") `,
-                    id: toolId,
-                  }),
-                icon: <HammerIcon className="size-3.5" />,
-                suffix: selectedIds?.includes(toolId) && (
-                  <CheckIcon className="size-3 ml-auto" />
-                ),
-              };
-            }) || [];
+        // // Add tool items
+        // const toolItems =
+        //   mcp.toolInfo
+        //     ?.filter(
+        //       (tool) =>
+        //         !searchValue ||
+        //         tool.name.toLowerCase().includes(searchValue.toLowerCase()),
+        //     )
+        //     .map((tool) => {
+        //       const toolId = JSON.stringify({
+        //         type: "mcpTool",
+        //         name: tool.name,
+        //         serverId: mcp.id,
+        //         description: tool.description,
+        //         serverName: mcp.name,
+        //       });
+        //       return {
+        //         id: `${mcp.id}-${tool.name}`,
+        //         type: "mcpTool",
+        //         label: tool.name,
+        //         onSelect: () =>
+        //           onSelectMention({
+        //             label: `tool("${tool.name}") `,
+        //             id: toolId,
+        //           }),
+        //         icon: <HammerIcon className="size-3.5" />,
+        //         suffix: selectedIds?.includes(toolId) && (
+        //           <CheckIcon className="size-3 ml-auto" />
+        //         ),
+        //       };
+        //     }) || [];
 
-        return [...items, ...toolItems];
+        return items;
       }) || []
     );
   }, [mcpList, selectedIds, disabledType, searchValue]);
