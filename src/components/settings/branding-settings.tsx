@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { Upload, X } from "lucide-react";
+import { Upload, X, Loader } from "lucide-react";
 
 const BrandingSettings = () => {
   const [productName, setProductName] = useState("");
@@ -64,196 +63,167 @@ const BrandingSettings = () => {
     }
   };
 
+  const hasChanges = () => {
+    return (
+      productName ||
+      copilotIcon ||
+      sidebarIcon ||
+      copilotWelcomeText ||
+      copilotWelcomeImage
+    );
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Product Name Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Product Name</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Label htmlFor="product-name">Product Name</Label>
-            <Input
-              id="product-name"
-              value={productName}
-              onChange={(e) => setProductName(e.target.value)}
-              placeholder="Enter product name"
-              className="max-w-md"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Copilot Welcome Text Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Copilot Welcome Text</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Label htmlFor="welcome-text">Welcome Text</Label>
-            <Input
-              id="welcome-text"
-              value={copilotWelcomeText}
-              onChange={(e) => setCopilotWelcomeText(e.target.value)}
-              placeholder="Enter welcome text for copilot"
-              className="max-w-md"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Copilot Welcome Image Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Copilot Welcome Image</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Button variant="outline" asChild>
-                <label htmlFor="welcome-image-upload">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Image
-                  <input
-                    id="welcome-image-upload"
-                    type="file"
-                    accept="image/svg+xml,image/png,image/jpeg,image/jpg"
-                    className="hidden"
-                    onChange={(e) => handleIconChange(e, "copilotWelcomeImage")}
-                  />
-                </label>
-              </Button>
-
-              {copilotWelcomeImage && (
-                <>
-                  <Avatar className="h-16 w-auto">
-                    <AvatarImage
-                      src={copilotWelcomeImage}
-                      alt="Welcome Image"
-                    />
-                    <AvatarFallback>WI</AvatarFallback>
-                  </Avatar>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setCopilotWelcomeImage(null)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Upload a PNG, JPG or SVG image under 1MB. This image will be used
-              in the copilot interface.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Copilot Icon Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Product Icon</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Button variant="outline" asChild>
-                <label htmlFor="copilot-icon-upload">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Icon
-                  <input
-                    id="copilot-icon-upload"
-                    type="file"
-                    accept="image/svg+xml,image/png,image/jpeg,image/jpg"
-                    className="hidden"
-                    onChange={(e) => handleIconChange(e, "copilot")}
-                  />
-                </label>
-              </Button>
-
-              {copilotIcon && (
-                <>
-                  <Avatar className="h-16 w-16">
-                    <AvatarImage src={copilotIcon} alt="Copilot Icon" />
-                    <AvatarFallback>CI</AvatarFallback>
-                  </Avatar>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setCopilotIcon(null)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Upload a PNG, JPG or SVG image under 1MB. Square images (72px x
-              72px) with colored backgrounds work best. Brand icons are visible
-              to customers.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Sidebar Icon Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Sidebar Icon</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Button variant="outline" asChild>
-                <label htmlFor="sidebar-icon-upload">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Icon
-                  <input
-                    id="sidebar-icon-upload"
-                    type="file"
-                    accept="image/svg+xml,image/png,image/jpeg,image/jpg"
-                    className="hidden"
-                    onChange={(e) => handleIconChange(e, "sidebar")}
-                  />
-                </label>
-              </Button>
-
-              {sidebarIcon && (
-                <>
-                  <Avatar className="h-16 w-auto">
-                    <AvatarImage src={sidebarIcon} alt="Sidebar Icon" />
-                    <AvatarFallback>SI</AvatarFallback>
-                  </Avatar>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setSidebarIcon(null)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Upload a PNG, JPG, or SVG image under 1MB. Logo image (100px x
-              20px) with a transparent background works best.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Save Button */}
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saving}>
-          {saving ? "Saving..." : "Save Changes"}
-        </Button>
+    <div className="flex flex-col gap-6 w-full">
+      <div className="flex flex-col gap-2">
+        <Label>Product Name</Label>
+        <Input
+          value={productName}
+          onChange={(e) => setProductName(e.target.value)}
+          placeholder="Enter product name"
+          className="max-w-md"
+        />
       </div>
+
+      <div className="flex flex-col gap-2">
+        <Label>Copilot Welcome Text</Label>
+        <Input
+          value={copilotWelcomeText}
+          onChange={(e) => setCopilotWelcomeText(e.target.value)}
+          placeholder="Enter welcome text for copilot"
+          className="max-w-md"
+        />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label>Copilot Welcome Image</Label>
+        <div className="flex items-center gap-4">
+          <Button variant="outline" asChild>
+            <label htmlFor="welcome-image-upload">
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Image
+              <input
+                id="welcome-image-upload"
+                type="file"
+                accept="image/svg+xml,image/png,image/jpeg,image/jpg"
+                className="hidden"
+                onChange={(e) => handleIconChange(e, "copilotWelcomeImage")}
+              />
+            </label>
+          </Button>
+
+          {copilotWelcomeImage && (
+            <>
+              <Avatar className="h-16 w-auto">
+                <AvatarImage src={copilotWelcomeImage} alt="Welcome Image" />
+                <AvatarFallback>WI</AvatarFallback>
+              </Avatar>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCopilotWelcomeImage(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Upload a PNG, JPG or SVG image under 1MB. This image will be used in
+          the copilot interface.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label>Product Icon</Label>
+        <div className="flex items-center gap-4">
+          <Button variant="outline" asChild>
+            <label htmlFor="copilot-icon-upload">
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Icon
+              <input
+                id="copilot-icon-upload"
+                type="file"
+                accept="image/svg+xml,image/png,image/jpeg,image/jpg"
+                className="hidden"
+                onChange={(e) => handleIconChange(e, "copilot")}
+              />
+            </label>
+          </Button>
+
+          {copilotIcon && (
+            <>
+              <Avatar className="h-16 w-16">
+                <AvatarImage src={copilotIcon} alt="Copilot Icon" />
+                <AvatarFallback>CI</AvatarFallback>
+              </Avatar>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCopilotIcon(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Upload a PNG, JPG or SVG image under 1MB. Square images (72px x 72px)
+          with colored backgrounds work best. Brand icons are visible to
+          customers.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label>Sidebar Icon</Label>
+        <div className="flex items-center gap-4">
+          <Button variant="outline" asChild>
+            <label htmlFor="sidebar-icon-upload">
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Icon
+              <input
+                id="sidebar-icon-upload"
+                type="file"
+                accept="image/svg+xml,image/png,image/jpeg,image/jpg"
+                className="hidden"
+                onChange={(e) => handleIconChange(e, "sidebar")}
+              />
+            </label>
+          </Button>
+
+          {sidebarIcon && (
+            <>
+              <Avatar className="h-16 w-auto">
+                <AvatarImage src={sidebarIcon} alt="Sidebar Icon" />
+                <AvatarFallback>SI</AvatarFallback>
+              </Avatar>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setSidebarIcon(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Upload a PNG, JPG, or SVG image under 1MB. Logo image (100px x 20px)
+          with a transparent background works best.
+        </p>
+      </div>
+
+      {hasChanges() && (
+        <div className="flex pt-4 items-center justify-end fade-in animate-in duration-300">
+          <Button variant="ghost">Cancel</Button>
+          <Button disabled={saving} onClick={handleSave}>
+            Save Changes
+            {saving && <Loader className="size-4 ml-2 animate-spin" />}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
 
-export { BrandingSettings };
+export default BrandingSettings;

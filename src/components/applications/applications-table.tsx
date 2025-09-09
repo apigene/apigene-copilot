@@ -372,7 +372,7 @@ export function ApplicationsTable() {
                         />
                       )}
                       {column.key === "name" && (
-                        <div className="font-medium">{item.api_name}</div>
+                        <div className="font-medium">{item.api_title}</div>
                       )}
                       {column.key === "version" && (
                         <Badge variant="secondary">{item.api_version}</Badge>
