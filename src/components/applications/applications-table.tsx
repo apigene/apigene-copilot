@@ -31,12 +31,72 @@ import {
   Globe,
   Lock,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ApplicationsTableProps {
   accessToken: string | null;
 }
 
 type SortDirection = "asc" | "desc" | null;
+
+function ApplicationsTableSkeleton() {
+  return (
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Applications</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {/* Search bar skeleton */}
+        <div className="flex items-center space-x-2 mb-4">
+          <Skeleton className="h-10 w-80" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+
+        {/* Table skeleton */}
+        <div className="rounded-md border">
+          {/* Table header skeleton */}
+          <div className="border-b bg-muted/50">
+            <div className="flex items-center px-4 py-3">
+              <Skeleton className="h-4 w-4 mr-3" />
+              <Skeleton className="h-4 w-32 mr-6" />
+              <Skeleton className="h-4 w-24 mr-6" />
+              <Skeleton className="h-4 w-20 mr-6" />
+              <Skeleton className="h-4 w-16 mr-6" />
+              <Skeleton className="h-4 w-20 mr-6" />
+              <Skeleton className="h-4 w-16 mr-6" />
+              <Skeleton className="h-4 w-12" />
+            </div>
+          </div>
+
+          {/* Table rows skeleton */}
+          {Array.from({ length: 5 }).map((_, index) => (
+            <div key={index} className="border-b last:border-b-0">
+              <div className="flex items-center px-4 py-3">
+                <Skeleton className="h-8 w-8 mr-3 rounded-full" />
+                <Skeleton className="h-4 w-32 mr-6" />
+                <Skeleton className="h-4 w-24 mr-6" />
+                <Skeleton className="h-4 w-20 mr-6" />
+                <Skeleton className="h-4 w-16 mr-6" />
+                <Skeleton className="h-4 w-20 mr-6" />
+                <Skeleton className="h-4 w-16 mr-6" />
+                <Skeleton className="h-6 w-6" />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Pagination skeleton */}
+        <div className="flex items-center justify-between mt-4">
+          <Skeleton className="h-4 w-32" />
+          <div className="flex items-center space-x-2">
+            <Skeleton className="h-8 w-8" />
+            <Skeleton className="h-8 w-8" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export function ApplicationsTable({ accessToken }: ApplicationsTableProps) {
   const [data, setData] = useState<ApplicationData[]>([]);
@@ -207,18 +267,7 @@ export function ApplicationsTable({ accessToken }: ApplicationsTableProps) {
   );
 
   if (loading) {
-    return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Applications</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-64">
-            <div className="text-muted-foreground">Loading applications...</div>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <ApplicationsTableSkeleton />;
   }
 
   if (error) {
