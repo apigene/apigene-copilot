@@ -15,8 +15,9 @@ import {
   ChevronsUpDown,
   LogOutIcon,
   Settings2,
-  FolderOpen,
+  Brain,
   Users,
+  Bot,
   Activity,
   BarChart3,
   Waypoints,
@@ -126,14 +127,14 @@ export function AppSidebarUser({ userId }: { userId?: string }) {
               className="cursor-pointer"
               onClick={() => redirect("/agents")}
             >
-              <Activity className="size-4 text-foreground" />
+              <Bot className="size-4 text-foreground" />
               <span>{t("agents")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               className="cursor-pointer"
               onClick={() => redirect("/context")}
             >
-              <FolderOpen className="size-4 text-foreground" />
+              <Brain className="size-4 text-foreground" />
               <span>Context</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
