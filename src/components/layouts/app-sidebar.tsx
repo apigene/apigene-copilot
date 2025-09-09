@@ -10,6 +10,7 @@ import {
   useSidebar,
 } from "ui/sidebar";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -56,9 +57,9 @@ export function AppSidebar({ userId }: { userId?: string }) {
       collapsible="offcanvas"
       className="border-r border-sidebar-border/80"
     >
-      <SidebarHeader>
+      <SidebarHeader className="py-6">
         <SidebarMenu>
-          <SidebarMenuItem className="flex items-center gap-0.5">
+          <SidebarMenuItem className="flex items-center justify-center gap-0.5">
             <SidebarMenuButton asChild className="hover:bg-transparent">
               <Link
                 href={`/`}
@@ -68,7 +69,13 @@ export function AppSidebar({ userId }: { userId?: string }) {
                   router.refresh();
                 }}
               >
-                <h4 className="font-bold">Apigene MCP Client</h4>
+                <Image
+                  src="/assets/logos/logo-apigene-sidebar.svg"
+                  alt="Apigene Logo"
+                  width={104}
+                  height={20}
+                  className="h-5 w-auto"
+                />
                 <div
                   className="ml-auto block sm:hidden"
                   onClick={(e) => {
