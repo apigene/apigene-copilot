@@ -62,10 +62,28 @@ export default function ContextDetailPage() {
         setError(null);
 
         // Fetch applications
+        console.log("[ContextPage] Starting to fetch specs data...");
         const appsResponse = await apiClient.get("/api/specs", {
           include_all: true,
         });
-        setApplications(appsResponse);
+        console.log("[ContextPage] Received specs data:", appsResponse);
+
+        // Check if result is an array
+        if (Array.isArray(appsResponse)) {
+          setApplications(appsResponse);
+          console.log(
+            "[ContextPage] Set applications with",
+            appsResponse.length,
+            "items",
+          );
+        } else {
+          console.error(
+            "[ContextPage] Expected array but got:",
+            typeof appsResponse,
+            appsResponse,
+          );
+          throw new Error("Invalid data format received from API");
+        }
 
         // Fetch context if editing existing one
         if (!isNewContext) {
@@ -84,7 +102,7 @@ export default function ContextDetailPage() {
     };
 
     fetchData();
-  }, [apiClient, contextId, isNewContext]);
+  }, [contextId, isNewContext]); // Remove apiClient dependency to prevent infinite loop
 
   const handleSave = async () => {
     try {

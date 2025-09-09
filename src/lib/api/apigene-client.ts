@@ -135,6 +135,26 @@ export class ApigeneClient {
     const url = this.buildUrl(endpoint, queryParams);
     const headers = await this.buildHeaders(customHeaders);
 
+    // Log before making the request
+    console.log(`Reqeust >> ${method}: ${url}`, {
+      endpoint,
+      method,
+      queryParams,
+      body,
+      headers: Object.keys(headers).reduce(
+        (acc, key) => {
+          // Don't log sensitive headers
+          if (key.toLowerCase() === "authorization") {
+            acc[key] = "[REDACTED]";
+          } else {
+            acc[key] = headers[key];
+          }
+          return acc;
+        },
+        {} as Record<string, string>,
+      ),
+    });
+
     try {
       const response = await fetch(url, {
         method,
@@ -142,7 +162,30 @@ export class ApigeneClient {
         body: body ? JSON.stringify(body) : undefined,
       });
 
-      const responseData = await response.json();
+      let responseData;
+      try {
+        responseData = await response.json();
+      } catch (jsonError) {
+        console.error(
+          `[ApigeneClient] Failed to parse JSON response for ${method} ${url}:`,
+          jsonError,
+        );
+        const textResponse = await response.text();
+        console.error(`[ApigeneClient] Raw response text:`, textResponse);
+        throw new ApigeneApiError(
+          `Failed to parse JSON response: ${jsonError instanceof Error ? jsonError.message : "Unknown error"}`,
+          response.status,
+          response.statusText,
+          textResponse,
+        );
+      }
+
+      // Log after receiving the response
+      console.log(`[ApigeneClient] Response received for ${method} ${url}:`, {
+        status: response.status,
+        statusText: response.statusText,
+        data: responseData,
+      });
 
       if (!response.ok) {
         throw new ApigeneApiError(
@@ -161,6 +204,12 @@ export class ApigeneClient {
         headers: response.headers,
       };
     } catch (error) {
+      // Log error
+      console.error(
+        `[ApigeneClient] Error in ${method} request to ${url}:`,
+        error,
+      );
+
       if (error instanceof ApigeneApiError) {
         throw error;
       }

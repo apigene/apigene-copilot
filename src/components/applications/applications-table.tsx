@@ -127,8 +127,20 @@ export function ApplicationsTable() {
         setError(null);
 
         const result = await apiClient.get("/api/specs", { include_all: true });
-        setData(result);
+
+        // Check if result is an array
+        if (Array.isArray(result)) {
+          setData(result);
+        } else {
+          console.error(
+            "[ApplicationsTable] Expected array but got:",
+            typeof result,
+            result,
+          );
+          setError("Invalid data format received from API");
+        }
       } catch (err) {
+        console.error("[ApplicationsTable] Error fetching data:", err);
         setError(err instanceof Error ? err.message : "Failed to fetch data");
       } finally {
         setLoading(false);
@@ -136,7 +148,7 @@ export function ApplicationsTable() {
     };
 
     fetchData();
-  }, [apiClient]); // Depend on apiClient
+  }, []); // Remove apiClient dependency to prevent infinite loop
 
   // Format date for display
   const formatDate = (dateString: string) => {
