@@ -9,8 +9,10 @@ import { COOKIE_KEY_SIDEBAR_STATE } from "lib/const";
 import { AppPopupProvider } from "@/components/layouts/app-popup-provider";
 import { SWRConfigProvider } from "./swr-config";
 import { redirect } from "next/navigation";
+import { OrganizationGuard } from "@/components/auth/organization-guard";
 
 export const experimental_ppr = true;
+export const dynamic = "force-dynamic";
 
 export default async function ChatLayout({
   children,
@@ -27,17 +29,19 @@ export default async function ChatLayout({
     cookieStore.get(COOKIE_KEY_SIDEBAR_STATE)?.value !== "true";
 
   return (
-    <SidebarProvider defaultOpen={!isCollapsed}>
-      <AccessTokenProvider>
-        <SWRConfigProvider>
-          <AppPopupProvider />
-          <AppSidebar userId={user.id} />
-          <main className="relative bg-background w-full flex flex-col h-screen">
-            <AppHeader />
-            <div className="flex-1 overflow-y-auto">{children}</div>
-          </main>
-        </SWRConfigProvider>
-      </AccessTokenProvider>
-    </SidebarProvider>
+    <OrganizationGuard>
+      <SidebarProvider defaultOpen={!isCollapsed}>
+        <AccessTokenProvider>
+          <SWRConfigProvider>
+            <AppPopupProvider />
+            <AppSidebar userId={user.id} />
+            <main className="relative bg-background w-full flex flex-col h-screen">
+              <AppHeader />
+              <div className="flex-1 overflow-y-auto">{children}</div>
+            </main>
+          </SWRConfigProvider>
+        </AccessTokenProvider>
+      </SidebarProvider>
+    </OrganizationGuard>
   );
 }

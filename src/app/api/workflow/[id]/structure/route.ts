@@ -1,6 +1,8 @@
 import { ensureUserExists } from "auth/server";
 import { workflowRepository } from "lib/db/repository";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(
   _: Request,
   { params }: { params: Promise<{ id: string }> },

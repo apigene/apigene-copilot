@@ -15,7 +15,7 @@ export default function SignUpPage() {
             },
           }}
           signInUrl="/sign-in"
-          redirectUrl="/"
+          redirectUrl="/finish-setup"
         />
       </div>
     </div>

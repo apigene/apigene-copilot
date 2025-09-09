@@ -4,6 +4,8 @@ import { serverCache } from "lib/cache";
 import { CacheKeys } from "lib/cache/cache-keys";
 import { mcpServerCustomizationRepository } from "lib/db/repository";
 
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 
 export async function GET(
