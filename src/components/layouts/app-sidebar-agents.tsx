@@ -5,13 +5,7 @@ import Link from "next/link";
 import { SidebarMenuButton, SidebarMenuSkeleton } from "ui/sidebar";
 import { SidebarGroupContent, SidebarMenu, SidebarMenuItem } from "ui/sidebar";
 import { SidebarGroup } from "ui/sidebar";
-import {
-  ArrowUpRightIcon,
-  ChevronDown,
-  ChevronUp,
-  MoreHorizontal,
-  PlusIcon,
-} from "lucide-react";
+import { ChevronDown, ChevronUp, MoreHorizontal, PlusIcon } from "lucide-react";
 
 import { useMounted } from "@/hooks/use-mounted";
 
@@ -36,7 +30,7 @@ export function AppSidebarAgents() {
   const t = useTranslations();
   const router = useRouter();
   const [expanded, setExpanded] = useState(false);
-  const { bookmarkedAgents, myAgents, isLoading, sharedAgents } = useAgents({
+  const { bookmarkedAgents, myAgents, isLoading } = useAgents({
     limit: 50,
   }); // Increase limit since we're not artificially limiting display
 
@@ -126,22 +120,9 @@ export function AppSidebarAgents() {
             </SidebarMenuItem>
           ) : agents.length == 0 ? (
             <div className="px-2 mt-1">
-              <Link
-                href={"/agent/new"}
-                className="bg-input/40 py-8 px-4 hover:bg-input/100 rounded-lg cursor-pointer flex justify-between items-center text-xs overflow-hidden"
-              >
-                <div className="gap-1 z-10">
-                  <div className="flex items-center mb-4 gap-1">
-                    <p className="font-semibold">{t("Layout.createAgent")}</p>
-                    <ArrowUpRightIcon className="size-3" />
-                  </div>
-                  <p className="text-muted-foreground">
-                    {sharedAgents.length > 0
-                      ? t("Layout.createYourOwnAgentOrSelectShared")
-                      : t("Layout.createYourOwnAgent")}
-                  </p>
-                </div>
-              </Link>
+              <div className="text-center text-muted-foreground text-sm py-4">
+                No agents yet
+              </div>
             </div>
           ) : (
             <div className="flex flex-col">

@@ -8,7 +8,29 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useApigeneApi } from "@/lib/api/apigene-client";
 import { toast } from "sonner";
-import { Plus, Trash2, Loader } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Loader,
+  Settings2,
+  Palette,
+  Sun,
+  MoonStar,
+  ChevronRight,
+} from "lucide-react";
+import { useTheme } from "next-themes";
+import { useThemeStyle } from "@/hooks/use-theme-style";
+import { BASE_THEMES } from "lib/const";
+import { capitalizeFirstLetter, cn } from "lib/utils";
+import { appStore } from "@/app/store";
+import { useShallow } from "zustand/shallow";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from "ui/dropdown-menu";
 
 interface AdditionalPersonalization {
   name: string;
@@ -194,6 +216,24 @@ const PersonalSettings = () => {
         </div>
       </div>
 
+      {/* Chat Preferences Section */}
+      <div className="flex flex-col gap-4 border-t pt-6">
+        <div className="flex items-center gap-2">
+          <Settings2 className="size-4" />
+          <h3 className="text-lg font-semibold">Chat Preferences</h3>
+        </div>
+        <ChatPreferencesSection />
+      </div>
+
+      {/* Theme Section */}
+      <div className="flex flex-col gap-4 border-t pt-6">
+        <div className="flex items-center gap-2">
+          <Palette className="size-4" />
+          <h3 className="text-lg font-semibold">Theme Settings</h3>
+        </div>
+        <ThemeSection />
+      </div>
+
       {hasChanges() && (
         <div className="flex pt-4 items-center justify-end fade-in animate-in duration-300">
           <Button variant="ghost">Cancel</Button>
@@ -206,5 +246,104 @@ const PersonalSettings = () => {
     </div>
   );
 };
+
+// Chat Preferences Section Component
+function ChatPreferencesSection() {
+  const [, appStoreMutate] = appStore(
+    useShallow((state) => [state.openChatPreferences, state.mutate]),
+  );
+
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-sm text-muted-foreground">
+        Configure your chat preferences and AI behavior settings.
+      </p>
+      <Button
+        variant="outline"
+        onClick={() => appStoreMutate({ openChatPreferences: true })}
+        className="w-fit"
+      >
+        <Settings2 className="size-4 mr-2" />
+        Open Chat Preferences
+      </Button>
+    </div>
+  );
+}
+
+// Theme Section Component
+function ThemeSection() {
+  const { theme = "light", setTheme } = useTheme();
+  const { themeStyle = "default", setThemeStyle } = useThemeStyle();
+
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-sm text-muted-foreground">
+        Customize the appearance and theme of your interface.
+      </p>
+
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">Theme Mode</Label>
+          <div
+            onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+            className="cursor-pointer border rounded-full flex items-center"
+          >
+            <div
+              className={cn(
+                theme === "dark" &&
+                  "bg-accent ring ring-muted-foreground/40 text-foreground",
+                "p-1 rounded-full",
+              )}
+            >
+              <MoonStar className="size-3" />
+            </div>
+            <div
+              className={cn(
+                theme === "light" &&
+                  "bg-accent ring ring-muted-foreground/40 text-foreground",
+                "p-1 rounded-full",
+              )}
+            >
+              <Sun className="size-3" />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label className="text-sm font-medium">Theme Style</Label>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="w-fit justify-start">
+                <Palette className="size-4 mr-2" />
+                {capitalizeFirstLetter(themeStyle)}
+                <ChevronRight className="size-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-48">
+              <DropdownMenuLabel className="text-muted-foreground">
+                {capitalizeFirstLetter(theme)} Theme
+              </DropdownMenuLabel>
+              <div className="max-h-96 overflow-y-auto">
+                {BASE_THEMES.map((t) => (
+                  <DropdownMenuCheckboxItem
+                    key={t}
+                    checked={themeStyle === t}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setThemeStyle(t);
+                    }}
+                    className="text-sm"
+                  >
+                    {capitalizeFirstLetter(t)}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default PersonalSettings;

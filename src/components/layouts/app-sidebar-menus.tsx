@@ -16,14 +16,8 @@ import Link from "next/link";
 import { getShortcutKeyList, Shortcuts } from "lib/keyboard-shortcuts";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { MCPIcon } from "ui/mcp-icon";
 import { WriteIcon } from "ui/write-icon";
-import {
-  FolderOpenIcon,
-  FolderSearchIcon,
-  PlusIcon,
-  Waypoints,
-} from "lucide-react";
+import { FolderOpenIcon, FolderSearchIcon, PlusIcon } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Skeleton } from "ui/skeleton";
 import { useArchives } from "@/hooks/queries/use-archives";
@@ -69,30 +63,6 @@ export function AppSidebarMenus() {
                       </span>
                     ))}
                   </div>
-                </SidebarMenuButton>
-              </Link>
-            </SidebarMenuItem>
-          </Tooltip>
-        </SidebarMenu>
-        <SidebarMenu>
-          <Tooltip>
-            <SidebarMenuItem>
-              <Link href="/mcp">
-                <SidebarMenuButton className="font-semibold">
-                  <MCPIcon className="size-4 fill-accent-foreground" />
-                  {t("Layout.mcpConfiguration")}
-                </SidebarMenuButton>
-              </Link>
-            </SidebarMenuItem>
-          </Tooltip>
-        </SidebarMenu>
-        <SidebarMenu>
-          <Tooltip>
-            <SidebarMenuItem>
-              <Link href="/workflow">
-                <SidebarMenuButton className="font-semibold">
-                  <Waypoints className="size-4" />
-                  {t("Layout.workflow")}
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>

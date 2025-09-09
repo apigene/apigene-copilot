@@ -7,11 +7,6 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
   DropdownMenu,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuPortal,
-  DropdownMenuSubContent,
-  DropdownMenuCheckboxItem,
 } from "ui/dropdown-menu";
 import { AvatarFallback, AvatarImage, Avatar } from "ui/avatar";
 import { SidebarMenuButton, SidebarMenuItem, SidebarMenu } from "ui/sidebar";
@@ -20,27 +15,19 @@ import {
   ChevronsUpDown,
   LogOutIcon,
   Settings2,
-  Palette,
-  Sun,
-  MoonStar,
-  ChevronRight,
   FolderOpen,
   Users,
   Activity,
   BarChart3,
+  Waypoints,
 } from "lucide-react";
-import { useTheme } from "next-themes";
-import { appStore } from "@/app/store";
-import { BASE_THEMES } from "lib/const";
-import { capitalizeFirstLetter, cn } from "lib/utils";
+import { MCPIcon } from "ui/mcp-icon";
 import { useUser, useClerk } from "auth/client";
 import { useTranslations } from "next-intl";
-import { useThemeStyle } from "@/hooks/use-theme-style";
 import { redirect } from "next/navigation";
 
 export function AppSidebarUser({ userId }: { userId?: string }) {
   // Call all hooks at the top level, before any conditional logic
-  const appStoreMutate = appStore((state) => state.mutate);
   const t = useTranslations("Layout");
   const { user } = useUser();
   const { signOut } = useClerk();
@@ -116,20 +103,31 @@ export function AppSidebarUser({ userId }: { userId?: string }) {
 
             <DropdownMenuItem
               className="cursor-pointer"
-              onClick={() => appStoreMutate({ openChatPreferences: true })}
-            >
-              <Settings2 className="size-4 text-foreground" />
-              <span>{t("chatPreferences")}</span>
-            </DropdownMenuItem>
-            <SelectTheme />
-            <DropdownMenuSeparator />
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="cursor-pointer"
               onClick={() => redirect("/applications")}
             >
               <AppWindow className="size-4 text-foreground" />
               <span>Applications</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => redirect("/mcp")}
+            >
+              <MCPIcon className="size-4 fill-accent-foreground" />
+              <span>{t("mcpConfiguration")}</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => redirect("/workflow")}
+            >
+              <Waypoints className="size-4 text-foreground" />
+              <span>{t("workflow")}</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => redirect("/agents")}
+            >
+              <Activity className="size-4 text-foreground" />
+              <span>{t("agents")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               className="cursor-pointer"
@@ -138,6 +136,8 @@ export function AppSidebarUser({ userId }: { userId?: string }) {
               <FolderOpen className="size-4 text-foreground" />
               <span>Context</span>
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+
             <DropdownMenuItem
               className="cursor-pointer"
               onClick={() => redirect("/actions")}
@@ -145,13 +145,7 @@ export function AppSidebarUser({ userId }: { userId?: string }) {
               <Activity className="size-4 text-foreground" />
               <span>Actions</span>
             </DropdownMenuItem>
-            <DropdownMenuItem
-              className="cursor-pointer"
-              onClick={() => redirect("/settings")}
-            >
-              <Settings2 className="size-4 text-foreground" />
-              <span>Settings</span>
-            </DropdownMenuItem>
+
             <DropdownMenuItem
               className="cursor-pointer"
               onClick={() => redirect("/dashboard")}
@@ -166,6 +160,15 @@ export function AppSidebarUser({ userId }: { userId?: string }) {
               <Users className="size-4 text-foreground" />
               <span>Invite Members</span>
             </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => redirect("/settings")}
+            >
+              <Settings2 className="size-4 text-foreground" />
+              <span>Settings</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={logout} className="cursor-pointer">
               <LogOutIcon className="size-4 text-foreground" />
@@ -175,83 +178,5 @@ export function AppSidebarUser({ userId }: { userId?: string }) {
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
-  );
-}
-
-function SelectTheme() {
-  const t = useTranslations("Layout");
-
-  const { theme = "light", setTheme } = useTheme();
-
-  const { themeStyle = "default", setThemeStyle } = useThemeStyle();
-
-  return (
-    <DropdownMenuSub>
-      <DropdownMenuSubTrigger
-        className="flex items-center"
-        icon={
-          <>
-            <span className="text-muted-foreground text-xs min-w-0 truncate">
-              {`${capitalizeFirstLetter(theme)} ${capitalizeFirstLetter(
-                themeStyle,
-              )}`}
-            </span>
-            <ChevronRight className="size-4 ml-2" />
-          </>
-        }
-      >
-        <Palette className="mr-2 size-4" />
-        <span className="mr-auto">{t("theme")}</span>
-      </DropdownMenuSubTrigger>
-      <DropdownMenuPortal>
-        <DropdownMenuSubContent className="w-48">
-          <DropdownMenuLabel className="text-muted-foreground w-full flex items-center">
-            <span className="text-muted-foreground text-xs mr-2 select-none">
-              {capitalizeFirstLetter(theme)}
-            </span>
-            <div className="flex-1" />
-
-            <div
-              onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-              className="cursor-pointer border rounded-full flex items-center"
-            >
-              <div
-                className={cn(
-                  theme === "dark" &&
-                    "bg-accent ring ring-muted-foreground/40 text-foreground",
-                  "p-1 rounded-full",
-                )}
-              >
-                <MoonStar className="size-3" />
-              </div>
-              <div
-                className={cn(
-                  theme === "light" &&
-                    "bg-accent ring ring-muted-foreground/40 text-foreground",
-                  "p-1 rounded-full",
-                )}
-              >
-                <Sun className="size-3" />
-              </div>
-            </div>
-          </DropdownMenuLabel>
-          <div className="max-h-96 overflow-y-auto">
-            {BASE_THEMES.map((t) => (
-              <DropdownMenuCheckboxItem
-                key={t}
-                checked={themeStyle === t}
-                onClick={(e) => {
-                  e.preventDefault();
-                  setThemeStyle(t);
-                }}
-                className="text-sm"
-              >
-                {capitalizeFirstLetter(t)}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </div>
-        </DropdownMenuSubContent>
-      </DropdownMenuPortal>
-    </DropdownMenuSub>
   );
 }
