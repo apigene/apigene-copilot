@@ -18,7 +18,6 @@ import { SidebarMenuButton, SidebarMenuItem, SidebarMenu } from "ui/sidebar";
 import {
   AppWindow,
   ChevronsUpDown,
-  Command,
   LogOutIcon,
   Settings2,
   Palette,
@@ -28,6 +27,7 @@ import {
   FolderOpen,
   Users,
   Activity,
+  BarChart3,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { appStore } from "@/app/store";
@@ -123,13 +123,6 @@ export function AppSidebarUser({ userId }: { userId?: string }) {
             </DropdownMenuItem>
             <SelectTheme />
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="cursor-pointer"
-              onClick={() => appStoreMutate({ openShortcutsPopup: true })}
-            >
-              <Command className="size-4 text-foreground" />
-              <span>{t("keyboardShortcuts")}</span>
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="cursor-pointer"
@@ -158,6 +151,13 @@ export function AppSidebarUser({ userId }: { userId?: string }) {
             >
               <Settings2 className="size-4 text-foreground" />
               <span>Settings</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => redirect("/dashboard")}
+            >
+              <BarChart3 className="size-4 text-foreground" />
+              <span>Dashboard</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               className="cursor-pointer"
