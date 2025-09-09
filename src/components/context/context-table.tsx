@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ContextData } from "@/types/context";
 import { useApigeneApi } from "@/lib/api/apigene-client";
@@ -196,9 +196,12 @@ export function ContextTable() {
 
   const pageSize = 20;
   const apiClient = useApigeneApi();
+  const hasFetched = useRef(false);
 
   // Fetch data
   useEffect(() => {
+    if (hasFetched.current) return;
+
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -206,6 +209,7 @@ export function ContextTable() {
 
         const result = await apiClient.get("/api/context");
         setData(result);
+        hasFetched.current = true;
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch data");
       } finally {
@@ -214,7 +218,7 @@ export function ContextTable() {
     };
 
     fetchData();
-  }, [apiClient]);
+  }, []); // Empty dependency array - only run once
 
   // Format date for display
   const formatDate = (dateString: string) => {
