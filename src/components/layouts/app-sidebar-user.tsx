@@ -25,6 +25,7 @@ import {
   Sun,
   MoonStar,
   ChevronRight,
+  FolderOpen,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { appStore } from "@/app/store";
@@ -134,6 +135,13 @@ export function AppSidebarUser({ userId }: { userId?: string }) {
             >
               <AppWindow className="size-4 text-foreground" />
               <span>Applications</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => redirect("/context")}
+            >
+              <FolderOpen className="size-4 text-foreground" />
+              <span>Context</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={logout} className="cursor-pointer">
