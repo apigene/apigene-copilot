@@ -14,6 +14,13 @@ export type User = {
   email: string;
   image: string | null;
   preferences?: UserPreferences;
+  trial_expire_in?: number;
+  // Additional fields from backend
+  org_name?: string;
+  org_id?: string;
+  role?: string;
+  onboarding_completed?: boolean;
+  features?: Record<string, boolean>;
 };
 
 export type UserRepository = {

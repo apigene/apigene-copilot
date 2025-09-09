@@ -26,6 +26,7 @@ import { MCPIcon } from "ui/mcp-icon";
 import { useUser, useClerk } from "auth/client";
 import { useTranslations } from "next-intl";
 import { redirect } from "next/navigation";
+import { TrialNotice } from "./trial-notice";
 
 export function AppSidebarUser({ userId }: { userId?: string }) {
   // Call all hooks at the top level, before any conditional logic
@@ -178,6 +179,9 @@ export function AppSidebarUser({ userId }: { userId?: string }) {
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
+
+      {/* Trial Notice */}
+      <TrialNotice className="mt-2" />
     </SidebarMenu>
   );
 }
