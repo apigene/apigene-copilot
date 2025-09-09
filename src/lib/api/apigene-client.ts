@@ -261,7 +261,35 @@ export function useApigeneApi() {
     return apiClient;
   }, [getToken]);
 
-  return client;
+  // Add interaction methods
+  const interactionList = async (
+    filters: Record<string, any> = {},
+    params: Record<string, any> = {},
+  ) => {
+    return client.post("/api/interaction/list", filters, params);
+  };
+
+  const interactionCreate = async (data: any) => {
+    return client.post("/api/interaction/create", data);
+  };
+
+  const interactionSummary = async (data: any) => {
+    return client.post("/api/interaction/summary", data);
+  };
+
+  return {
+    // Spread all the original client methods
+    get: client.get.bind(client),
+    post: client.post.bind(client),
+    put: client.put.bind(client),
+    delete: client.delete.bind(client),
+    patch: client.patch.bind(client),
+    request: client.request.bind(client),
+    // Add interaction methods
+    interactionList,
+    interactionCreate,
+    interactionSummary,
+  };
 }
 
 // Export error class for error handling

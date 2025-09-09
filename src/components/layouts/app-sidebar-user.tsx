@@ -27,6 +27,7 @@ import {
   ChevronRight,
   FolderOpen,
   Users,
+  Activity,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { appStore } from "@/app/store";
@@ -143,6 +144,13 @@ export function AppSidebarUser({ userId }: { userId?: string }) {
             >
               <FolderOpen className="size-4 text-foreground" />
               <span>Context</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => redirect("/actions")}
+            >
+              <Activity className="size-4 text-foreground" />
+              <span>Actions</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               className="cursor-pointer"
