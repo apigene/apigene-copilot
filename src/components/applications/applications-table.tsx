@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { ApplicationData } from "@/types/applications";
 import { ApplicationIcon } from "./application-icon";
+import { useApigeneApi } from "@/lib/api/apigene-client";
 import {
   Table,
   TableBody,
@@ -32,10 +33,6 @@ import {
   Lock,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-
-interface ApplicationsTableProps {
-  accessToken: string | null;
-}
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -98,7 +95,7 @@ function ApplicationsTableSkeleton() {
   );
 }
 
-export function ApplicationsTable({ accessToken }: ApplicationsTableProps) {
+export function ApplicationsTable() {
   const [data, setData] = useState<ApplicationData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -120,30 +117,16 @@ export function ApplicationsTable({ accessToken }: ApplicationsTableProps) {
   );
 
   const pageSize = 20;
+  const apiClient = useApigeneApi();
 
   // Fetch data
   useEffect(() => {
     const fetchData = async () => {
-      if (!accessToken) return;
-
       try {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(
-          "https://dev.apigene.ai/api/specs?include_all=true",
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          },
-        );
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch data: ${response.status}`);
-        }
-
-        const result = await response.json();
+        const result = await apiClient.get("/api/specs", { include_all: true });
         setData(result);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch data");
@@ -153,7 +136,7 @@ export function ApplicationsTable({ accessToken }: ApplicationsTableProps) {
     };
 
     fetchData();
-  }, [accessToken]);
+  }, [apiClient]); // Depend on apiClient
 
   // Format date for display
   const formatDate = (dateString: string) => {

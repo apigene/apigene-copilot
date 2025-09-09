@@ -9,5 +9,5 @@ export default async function ApplicationsPage() {
     notFound();
   }
 
-  return <ApplicationsList accessToken={session?.accessToken} />;
+  return <ApplicationsList />;
 }

@@ -63,9 +63,11 @@ export class ClerkServerAdapter {
         id: sessionId,
         userId: internalUserId, // Use internal UUID instead of Clerk ID
       },
-      accessToken: await getToken({
-        template: process.env.NEXT_PUBLIC_AUTH_CLERK_JWT_TPL,
-      }),
+      accessToken: getToken
+        ? await getToken({
+            template: process.env.NEXT_PUBLIC_AUTH_CLERK_JWT_TPL,
+          })
+        : null,
     };
   }
 
