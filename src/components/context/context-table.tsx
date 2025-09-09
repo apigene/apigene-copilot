@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { ContextData } from "@/types/context";
 import { useApigeneApi } from "@/lib/api/apigene-client";
 import {
@@ -173,6 +174,7 @@ function ContextTableSkeleton() {
 }
 
 export function ContextTable() {
+  const router = useRouter();
   const [data, setData] = useState<ContextData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -356,7 +358,7 @@ export function ContextTable() {
             its responses to specific company policies and guidelines.
           </p>
         </div>
-        <EmptyState onCreateContext={() => console.log("Create context")} />
+        <EmptyState onCreateContext={() => router.push("/context/new")} />
       </div>
     );
   }
@@ -388,7 +390,10 @@ export function ContextTable() {
             className="pl-10 w-full bg-white/5 border-white/10 focus:bg-white/10"
           />
         </div>
-        <Button className="w-full sm:w-auto">
+        <Button
+          className="w-full sm:w-auto"
+          onClick={() => router.push("/context/new")}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create New Context
         </Button>
@@ -473,7 +478,7 @@ export function ContextTable() {
                     className={`border-white/5 cursor-pointer transition-all duration-200 hover:bg-white/5 hover:-translate-y-0.5 hover:shadow-lg ${
                       index % 2 === 0 ? "bg-white/1" : "bg-white/2"
                     }`}
-                    onClick={() => console.log("View context", item)}
+                    onClick={() => router.push(`/context/${item.id}`)}
                   >
                     {visibleColumnsArray.map((column) => (
                       <TableCell
@@ -526,7 +531,7 @@ export function ContextTable() {
                               <DropdownMenuItem
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  console.log("View details", item);
+                                  router.push(`/context/${item.id}`);
                                 }}
                                 className="text-white hover:bg-gray-800"
                               >
@@ -536,7 +541,7 @@ export function ContextTable() {
                               <DropdownMenuItem
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  console.log("Edit", item);
+                                  router.push(`/context/${item.id}`);
                                 }}
                                 className="text-white hover:bg-gray-800"
                               >
@@ -546,6 +551,7 @@ export function ContextTable() {
                               <DropdownMenuItem
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  // TODO: Implement delete functionality
                                   console.log("Delete", item);
                                 }}
                                 className="text-red-400 hover:bg-red-500/10"
