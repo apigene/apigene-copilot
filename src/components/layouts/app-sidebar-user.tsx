@@ -143,6 +143,13 @@ export function AppSidebarUser({ userId }: { userId?: string }) {
               <FolderOpen className="size-4 text-foreground" />
               <span>Context</span>
             </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => redirect("/settings")}
+            >
+              <Settings2 className="size-4 text-foreground" />
+              <span>Settings</span>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={logout} className="cursor-pointer">
               <LogOutIcon className="size-4 text-foreground" />
