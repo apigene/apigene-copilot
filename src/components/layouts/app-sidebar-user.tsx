@@ -26,6 +26,7 @@ import {
   MoonStar,
   ChevronRight,
   FolderOpen,
+  Users,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { appStore } from "@/app/store";
@@ -149,6 +150,13 @@ export function AppSidebarUser({ userId }: { userId?: string }) {
             >
               <Settings2 className="size-4 text-foreground" />
               <span>Settings</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => redirect("/users")}
+            >
+              <Users className="size-4 text-foreground" />
+              <span>Invite Members</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={logout} className="cursor-pointer">
