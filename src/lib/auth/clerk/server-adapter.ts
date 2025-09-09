@@ -31,26 +31,82 @@ export interface User {
 
 export class ClerkServerAdapter {
   async getSession(): Promise<Session | null> {
-    const { userId, sessionId, getToken } = await auth();
+    try {
+      const { userId, sessionId, getToken } = await auth();
 
-    if (!userId || !sessionId) {
-      // Don't log as error - this is expected when user is not authenticated
+      if (!userId || !sessionId) {
+        // Don't log as error - this is expected when user is not authenticated
+        return null;
+      }
+
+      // Get user data from Clerk using currentUser()
+      const user = await currentUser();
+
+      if (!user) {
+        // User not found, likely signed out
+        return null;
+      }
+
+      // Map Clerk user ID to internal UUID
+      const internalUserId = await mapClerkUserIdToUuid(userId, {
+        name: user?.fullName || undefined,
+        email: user?.primaryEmailAddress?.emailAddress,
+        image: user?.imageUrl,
+      });
+
+      // Transform Clerk session to match betterAuth format
+      return {
+        user: {
+          id: internalUserId, // Use internal UUID instead of Clerk ID
+          email: user?.primaryEmailAddress?.emailAddress || "",
+          emailVerified: true,
+          name: user?.fullName || undefined || "",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          image: user?.imageUrl || null,
+        },
+        session: {
+          id: sessionId,
+          userId: internalUserId, // Use internal UUID instead of Clerk ID
+        },
+        accessToken: getToken
+          ? await getToken({
+              template: process.env.NEXT_PUBLIC_AUTH_CLERK_JWT_TPL,
+            })
+          : null,
+      };
+    } catch (error) {
+      // Handle authentication errors gracefully
+      console.warn("Authentication error in getSession:", error);
       return null;
     }
+  }
 
-    // Get user data from Clerk using currentUser()
-    const user = await currentUser();
+  async ensureUserExists(): Promise<User | null> {
+    try {
+      const { userId } = await auth();
 
-    // Map Clerk user ID to internal UUID
-    const internalUserId = await mapClerkUserIdToUuid(userId, {
-      name: user?.fullName || undefined,
-      email: user?.primaryEmailAddress?.emailAddress,
-      image: user?.imageUrl,
-    });
+      if (!userId) {
+        return null;
+      }
 
-    // Transform Clerk session to match betterAuth format
-    return {
-      user: {
+      // Get user data from Clerk using currentUser()
+      const user = await currentUser();
+
+      if (!user) {
+        // User not found, likely signed out
+        return null;
+      }
+
+      // Map Clerk user ID to internal UUID
+      const internalUserId = await mapClerkUserIdToUuid(userId, {
+        name: user?.fullName || undefined,
+        email: user?.primaryEmailAddress?.emailAddress,
+        image: user?.imageUrl,
+      });
+
+      // Return user data in expected format
+      return {
         id: internalUserId, // Use internal UUID instead of Clerk ID
         email: user?.primaryEmailAddress?.emailAddress || "",
         emailVerified: true,
@@ -58,46 +114,12 @@ export class ClerkServerAdapter {
         createdAt: new Date(),
         updatedAt: new Date(),
         image: user?.imageUrl || null,
-      },
-      session: {
-        id: sessionId,
-        userId: internalUserId, // Use internal UUID instead of Clerk ID
-      },
-      accessToken: getToken
-        ? await getToken({
-            template: process.env.NEXT_PUBLIC_AUTH_CLERK_JWT_TPL,
-          })
-        : null,
-    };
-  }
-
-  async ensureUserExists(): Promise<User | null> {
-    const { userId } = await auth();
-
-    if (!userId) {
+      };
+    } catch (error) {
+      // Handle authentication errors gracefully
+      console.warn("Authentication error in ensureUserExists:", error);
       return null;
     }
-
-    // Get user data from Clerk using currentUser()
-    const user = await currentUser();
-
-    // Map Clerk user ID to internal UUID
-    const internalUserId = await mapClerkUserIdToUuid(userId, {
-      name: user?.fullName || undefined,
-      email: user?.primaryEmailAddress?.emailAddress,
-      image: user?.imageUrl,
-    });
-
-    // Return user data in expected format
-    return {
-      id: internalUserId, // Use internal UUID instead of Clerk ID
-      email: user?.primaryEmailAddress?.emailAddress || "",
-      emailVerified: true,
-      name: user?.fullName || undefined || "",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      image: user?.imageUrl || null,
-    };
   }
 }
 
