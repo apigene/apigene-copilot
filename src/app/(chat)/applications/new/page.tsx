@@ -144,7 +144,11 @@ export default function NewApplicationPage() {
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
-      <Button variant="ghost" onClick={() => router.back()} className="mb-4">
+      <Button
+        variant="ghost"
+        onClick={() => router.push("/applications")}
+        className="mb-4"
+      >
         <ArrowLeft className="h-4 w-4 mr-2" />
         Back to Applications
       </Button>
