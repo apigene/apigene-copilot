@@ -154,7 +154,7 @@ export default function NewApplicationPage() {
       </Button>
 
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold mb-2">Create New Application</h1>
+        <h1 className="text-3xl font-bold mb-2">Install New Application</h1>
         <p className="text-muted-foreground">
           Choose how you want to import your OpenAPI specification
         </p>
@@ -252,10 +252,10 @@ export default function NewApplicationPage() {
                     {loading ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Creating...
+                        Installing...
                       </>
                     ) : (
-                      "Create Application"
+                      "Installing"
                     )}
                   </Button>
                 </div>

@@ -249,7 +249,7 @@
     },
     "Thread": {
       "chat": "Chat",
-      "renameChat": "Re Name",
+      "renameChat": "Rename",
       "deleteChat": "Delete Chat",
       "deleteUnarchivedChats": "Delete All Unarchived Chats",
       "confirmDeleteUnarchivedChats": "Are you sure you want to delete all unarchived chats?",
