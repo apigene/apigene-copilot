@@ -344,6 +344,32 @@ export default function ChatBot({ threadId, initialMessages }: Props) {
     }
   }, [input]);
 
+  // Auto-scroll enhancement: scroll to bottom every second during active conversation
+  useEffect(() => {
+    if (!isLoading || !isAtBottom || messages.length === 0) return;
+
+    const interval = setInterval(() => {
+      // Only auto-scroll if we're still loading and user is at bottom
+      if (isLoading && isAtBottom) {
+        scrollToBottom();
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isLoading, isAtBottom, messages.length, scrollToBottom]);
+
+  // Scroll to bottom when copilot finishes sending messages and becomes ready
+  useEffect(() => {
+    if (status === "ready" && messages.length > 0) {
+      // Small delay to ensure DOM is updated with final message content
+      const timeoutId = setTimeout(() => {
+        scrollToBottom();
+      }, 1000);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [status, messages.length, scrollToBottom]);
+
   return (
     <>
       {particle}
