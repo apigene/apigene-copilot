@@ -66,7 +66,9 @@ const OrganizationSettings = () => {
         `/api/org/organization/${orgName}/generate_token`,
         {},
         {
-          expiry_duration: selectedDuration,
+          queryParams: {
+            expiry_duration: selectedDuration,
+          },
         },
       );
 
