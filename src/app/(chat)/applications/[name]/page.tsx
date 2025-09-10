@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useApigeneApi } from "@/lib/api/apigene-client";
 import { ApplicationData } from "@/types/applications";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -19,6 +19,7 @@ import { OperationsTab } from "./components/operations-tab";
 export default function ApplicationEditPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const apiClient = useApigeneApi();
 
   const [application, setApplication] = useState<ApplicationData | null>(null);
@@ -27,6 +28,31 @@ export default function ApplicationEditPage() {
   const [activeTab, setActiveTab] = useState("general");
 
   const applicationName = params.name as string;
+
+  // Available tabs
+  const availableTabs = [
+    "general",
+    "security",
+    "metadata",
+    "common-parameters",
+    "operations",
+  ];
+
+  // Handle tab query parameter
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam && availableTabs.includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
+  // Update URL when tab changes
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", value);
+    router.replace(url.pathname + url.search, { scroll: false });
+  };
 
   // Fetch application data
   useEffect(() => {
@@ -149,7 +175,11 @@ export default function ApplicationEditPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs
+        value={activeTab}
+        onValueChange={handleTabChange}
+        className="w-full"
+      >
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="security" className="flex items-center gap-1">
@@ -160,7 +190,7 @@ export default function ApplicationEditPage() {
           </TabsTrigger>
           <TabsTrigger value="operations">Operations</TabsTrigger>
           <TabsTrigger value="metadata">Metadata</TabsTrigger>
-          <TabsTrigger value="parameters">Parameters</TabsTrigger>
+          <TabsTrigger value="common-parameters">Parameters</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="mt-6">
@@ -191,7 +221,7 @@ export default function ApplicationEditPage() {
           />
         </TabsContent>
 
-        <TabsContent value="parameters" className="mt-6">
+        <TabsContent value="common-parameters" className="mt-6">
           <CommonParametersTab
             application={application}
             onUpdate={handleApplicationUpdate}

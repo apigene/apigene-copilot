@@ -64,7 +64,7 @@ export default function ContextDetailPage() {
         // Fetch applications
         console.log("[ContextPage] Starting to fetch specs data...");
         const appsResponse = await apiClient.get("/api/specs", {
-          include_all: true,
+          queryParams: { include_all: true },
         });
         console.log("[ContextPage] Received specs data:", appsResponse);
 

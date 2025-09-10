@@ -23,6 +23,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   MoreHorizontal,
   Search,
   ArrowUpDown,
@@ -31,9 +39,13 @@ import {
   Eye,
   Globe,
   Lock,
+  Trash2,
+  Loader2,
+  Plus,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -117,6 +129,10 @@ export function ApplicationsTable() {
       "actions",
     ]),
   );
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [applicationToDelete, setApplicationToDelete] =
+    useState<ApplicationData | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const pageSize = 20;
   const apiClient = useApigeneApi();
@@ -128,7 +144,9 @@ export function ApplicationsTable() {
         setLoading(true);
         setError(null);
 
-        const result = await apiClient.get("/api/specs", { include_all: true });
+        const result = await apiClient.get("/api/specs", {
+          queryParams: { include_all: true },
+        });
 
         // Check if result is an array
         if (Array.isArray(result)) {
@@ -151,6 +169,33 @@ export function ApplicationsTable() {
 
     fetchData();
   }, []); // Remove apiClient dependency to prevent infinite loop
+
+  // Handle application deletion
+  const handleDeleteApplication = async () => {
+    if (!applicationToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      await apiClient.specDelete(applicationToDelete.api_name);
+      toast.success("Application deleted successfully!");
+
+      // Remove the deleted application from the local state
+      setData((prevData) =>
+        prevData.filter((app) => app.api_name !== applicationToDelete.api_name),
+      );
+
+      // Close dialog and reset state
+      setShowDeleteDialog(false);
+      setApplicationToDelete(null);
+    } catch (err) {
+      console.error("Error deleting application:", err);
+      toast.error(
+        err instanceof Error ? err.message : "Failed to delete application",
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Format date for display
   const formatDate = (dateString: string) => {
@@ -288,6 +333,13 @@ export function ApplicationsTable() {
         <div className="flex items-center justify-between">
           <CardTitle>Applications ({data.length})</CardTitle>
           <div className="flex items-center gap-2">
+            <Button
+              onClick={() => router.push("/applications/new")}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              New App
+            </Button>
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -422,14 +474,13 @@ export function ApplicationsTable() {
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => console.log("Delete", item)}
+                              onClick={() => {
+                                setApplicationToDelete(item);
+                                setShowDeleteDialog(true);
+                              }}
+                              className="text-red-600 focus:text-red-600"
                             >
                               Delete
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => console.log("Copy API Key", item)}
-                            >
-                              Copy API Key
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -478,6 +529,50 @@ export function ApplicationsTable() {
           </div>
         )}
       </CardContent>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Application</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete &quot;
+              {applicationToDelete?.api_title || applicationToDelete?.api_name}
+              &quot;? This action cannot be undone and will permanently remove
+              the application and all its data.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setApplicationToDelete(null);
+              }}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteApplication}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Application
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

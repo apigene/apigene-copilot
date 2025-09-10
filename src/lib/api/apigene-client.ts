@@ -5,6 +5,36 @@
 import { useMemo, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
 
+// Utility function for creating FormData from objects
+export const customFormData = <Body>(body: Body): FormData => {
+  const formData = new FormData();
+
+  for (const key in body) {
+    if ((body as object).hasOwnProperty(key)) {
+      const value = body[key];
+
+      // Handle File objects
+      if (value instanceof File || value instanceof Blob) {
+        formData.append(key, value);
+      }
+      // Handle arrays
+      else if (Array.isArray(value)) {
+        value.forEach((item) => formData.append(`${key}[]`, item));
+      }
+      // Handle null or undefined
+      else if (value === null || value === undefined) {
+        continue;
+      }
+      // Handle other types (convert to string)
+      else {
+        formData.append(key, String(value));
+      }
+    }
+  }
+
+  return formData;
+};
+
 // Types
 export interface ApiRequest {
   endpoint: string;
@@ -113,11 +143,17 @@ export class ApigeneClient {
    */
   private async buildHeaders(
     customHeaders?: Record<string, string>,
+    body?: any,
   ): Promise<Record<string, string>> {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       ...customHeaders,
     };
+
+    // Remove Content-Type header if it's FormData to let browser set it with boundary
+    if (body instanceof FormData) {
+      delete headers["Content-Type"];
+    }
 
     const token = await this.getAuthToken();
     if (token) {
@@ -140,14 +176,14 @@ export class ApigeneClient {
     } = requestConfig;
 
     const url = this.buildUrl(endpoint, queryParams);
-    const headers = await this.buildHeaders(customHeaders);
+    const headers = await this.buildHeaders(customHeaders, body);
 
     // Log before making the request
-    console.log(`Reqeust >> ${method}: ${url} ${headers}`, {
+    console.log(`Request >> ${method}: ${url}`, {
       endpoint,
       method,
       queryParams,
-      body,
+      body: body instanceof FormData ? "FormData" : body,
       headers: Object.keys(headers).reduce(
         (acc, key) => {
           // Don't log sensitive headers
@@ -166,7 +202,12 @@ export class ApigeneClient {
       const response = await fetch(url, {
         method,
         headers,
-        body: body ? JSON.stringify(body) : undefined,
+        body:
+          body instanceof FormData
+            ? body
+            : body
+              ? JSON.stringify(body)
+              : undefined,
       });
 
       let responseData;
@@ -230,12 +271,16 @@ export class ApigeneClient {
   // Convenience methods
   async get<T = any>(
     endpoint: string,
-    queryParams?: Record<string, string | number | boolean>,
+    options?: {
+      queryParams?: Record<string, string | number | boolean>;
+      headers?: Record<string, string>;
+    },
   ): Promise<T> {
     const response = await this.request<T>({
       endpoint,
       method: "GET",
-      queryParams,
+      queryParams: options?.queryParams,
+      headers: options?.headers,
     });
     return response.data;
   }
@@ -243,13 +288,17 @@ export class ApigeneClient {
   async post<T = any>(
     endpoint: string,
     body?: any,
-    queryParams?: Record<string, string | number | boolean>,
+    options?: {
+      queryParams?: Record<string, string | number | boolean>;
+      headers?: Record<string, string>;
+    },
   ): Promise<T> {
     const response = await this.request<T>({
       endpoint,
       method: "POST",
       body,
-      queryParams,
+      queryParams: options?.queryParams,
+      headers: options?.headers,
     });
     return response.data;
   }
@@ -257,25 +306,33 @@ export class ApigeneClient {
   async put<T = any>(
     endpoint: string,
     body?: any,
-    queryParams?: Record<string, string | number | boolean>,
+    options?: {
+      queryParams?: Record<string, string | number | boolean>;
+      headers?: Record<string, string>;
+    },
   ): Promise<T> {
     const response = await this.request<T>({
       endpoint,
       method: "PUT",
       body,
-      queryParams,
+      queryParams: options?.queryParams,
+      headers: options?.headers,
     });
     return response.data;
   }
 
   async delete<T = any>(
     endpoint: string,
-    queryParams?: Record<string, string | number | boolean>,
+    options?: {
+      queryParams?: Record<string, string | number | boolean>;
+      headers?: Record<string, string>;
+    },
   ): Promise<T> {
     const response = await this.request<T>({
       endpoint,
       method: "DELETE",
-      queryParams,
+      queryParams: options?.queryParams,
+      headers: options?.headers,
     });
     return response.data;
   }
@@ -283,13 +340,17 @@ export class ApigeneClient {
   async patch<T = any>(
     endpoint: string,
     body?: any,
-    queryParams?: Record<string, string | number | boolean>,
+    options?: {
+      queryParams?: Record<string, string | number | boolean>;
+      headers?: Record<string, string>;
+    },
   ): Promise<T> {
     const response = await this.request<T>({
       endpoint,
       method: "PATCH",
       body,
-      queryParams,
+      queryParams: options?.queryParams,
+      headers: options?.headers,
     });
     return response.data;
   }
@@ -356,6 +417,13 @@ export function useApigeneApi() {
     [client],
   );
 
+  const specDelete = useCallback(
+    async (name: string) => {
+      return client.delete(`/api/spec/${name}`);
+    },
+    [client],
+  );
+
   const specGetInstructions = useCallback(
     async (name: string) => {
       return client.get(`/api/spec/instructions/${name}`);
@@ -391,6 +459,31 @@ export function useApigeneApi() {
     [client],
   );
 
+  const specCreateFromUrl = useCallback(
+    async (data: { url: string; global_spec?: boolean }) => {
+      return client.post("/api/spec_from_url/", data, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    },
+    [client],
+  );
+
+  const specCreateFromFile = useCallback(
+    async (data: { file: File; global_spec?: boolean }) => {
+      const formData = customFormData(data);
+
+      const response = await client.request({
+        endpoint: "/api/spec_from_file/",
+        method: "POST",
+        body: formData,
+      });
+      return response.data;
+    },
+    [client],
+  );
+
   return useMemo(
     () => ({
       // Spread all the original client methods
@@ -408,6 +501,7 @@ export function useApigeneApi() {
       // Spec general methods
       specGet,
       specUpdate,
+      specDelete,
       // Spec security (instructions) methods
       specGetInstructions,
       specCreateInstructions,
@@ -416,6 +510,9 @@ export function useApigeneApi() {
       specUpdateAgenticMetadata,
       // Spec operations methods
       specGetOperations,
+      // Spec creation methods
+      specCreateFromUrl,
+      specCreateFromFile,
     }),
     [client, interactionList, interactionCreate, interactionSummary],
   );

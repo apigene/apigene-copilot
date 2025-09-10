@@ -205,8 +205,7 @@ export function OperationsTab({ application, onUpdate }: OperationsTabProps) {
         (operation.description &&
           operation.description
             .toLowerCase()
-            .includes(searchTerm.toLowerCase())) ||
-        operation.path.toLowerCase().includes(searchTerm.toLowerCase());
+            .includes(searchTerm.toLowerCase()));
 
       // Operation type filter
       const matchesOperationType =
@@ -634,13 +633,10 @@ export function OperationsTab({ application, onUpdate }: OperationsTabProps) {
                           <TableHead className="w-[20%] px-2 py-3">
                             Operation Name
                           </TableHead>
-                          <TableHead className="w-[35%] px-2 py-3">
+                          <TableHead className="w-[50%] px-2 py-3">
                             Description
                           </TableHead>
-                          <TableHead className="w-[15%] px-2 py-3">
-                            Path
-                          </TableHead>
-                          <TableHead className="w-[15%] px-2 py-3">
+                          <TableHead className="w-[20%] px-2 py-3">
                             Tags
                           </TableHead>
                         </TableRow>
@@ -723,9 +719,6 @@ export function OperationsTab({ application, onUpdate }: OperationsTabProps) {
                                     No description available
                                   </span>
                                 )}
-                              </TableCell>
-                              <TableCell className="px-2 py-3 text-sm font-mono text-muted-foreground">
-                                {operation.path}
                               </TableCell>
                               <TableCell className="px-2 py-3">
                                 <div className="flex flex-wrap gap-1">
@@ -824,34 +817,27 @@ export function OperationsTab({ application, onUpdate }: OperationsTabProps) {
                                     </p>
                                   )}
 
-                                  <div className="flex items-center gap-2 mt-2">
-                                    <span className="text-xs font-mono text-muted-foreground">
-                                      {operation.path}
-                                    </span>
-                                    {operation.tags.length > 0 && (
-                                      <div className="flex gap-1">
-                                        {operation.tags
-                                          .slice(0, 2)
-                                          .map((tag) => (
-                                            <Badge
-                                              key={tag}
-                                              variant="secondary"
-                                              className="text-xs px-1 py-0.5"
-                                            >
-                                              {tag}
-                                            </Badge>
-                                          ))}
-                                        {operation.tags.length > 2 && (
-                                          <Badge
-                                            variant="secondary"
-                                            className="text-xs px-1 py-0.5"
-                                          >
-                                            +{operation.tags.length - 2}
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
+                                  {operation.tags.length > 0 && (
+                                    <div className="flex gap-1">
+                                      {operation.tags.slice(0, 2).map((tag) => (
+                                        <Badge
+                                          key={tag}
+                                          variant="secondary"
+                                          className="text-xs px-1 py-0.5"
+                                        >
+                                          {tag}
+                                        </Badge>
+                                      ))}
+                                      {operation.tags.length > 2 && (
+                                        <Badge
+                                          variant="secondary"
+                                          className="text-xs px-1 py-0.5"
+                                        >
+                                          +{operation.tags.length - 2}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </div>
