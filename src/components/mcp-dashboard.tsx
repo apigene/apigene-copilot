@@ -27,6 +27,7 @@ import { useRouter } from "next/navigation";
 import { Avatar, AvatarImage } from "ui/avatar";
 import { useApigeneApi } from "@/lib/api/apigene-client";
 import { useAuth } from "@clerk/nextjs";
+import { getIconUrl } from "@/lib/icon-utils";
 
 const LightRays = dynamic(() => import("@/components/ui/light-rays"), {
   ssr: false,
@@ -148,12 +149,6 @@ export default function MCPDashboard({ message }: { message?: string }) {
     const response = await apiClient.get(
       "api/gpts/list?include_private_gpts=true&include_public_gpts=true",
     );
-    const getIconUrl = (icon_url: string) => {
-      const domain = icon_url.replace("https://logo.clearbit.com/", "");
-      const brandfetchClientId = process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID;
-
-      return `https://cdn.brandfetch.io/${encodeURIComponent(domain)}?c=${brandfetchClientId}&fallback=https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}`;
-    };
     const agentConfigs = response.map((agent: any) => ({
       name: agent.gpt_name,
       label: agent.gpt_name,

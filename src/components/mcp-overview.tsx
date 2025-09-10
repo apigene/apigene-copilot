@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { Avatar, AvatarImage } from "ui/avatar";
 import { useApigeneApi } from "@/lib/api/apigene-client";
 import { useAuth } from "@clerk/nextjs";
+import { getIconUrl } from "@/lib/icon-utils";
 
 export type ApigeneAgent = {
   name: string;
@@ -75,12 +76,6 @@ export function MCPOverview() {
           );
           return;
         }
-        const getIconUrl = (icon_url: string) => {
-          const domain = icon_url.replace("https://logo.clearbit.com/", "");
-          const brandfetchClientId =
-            process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID;
-          return `https://cdn.brandfetch.io/${encodeURIComponent(domain)}?c=${brandfetchClientId}`;
-        };
         const agentConfigs = response.map((agent: any) => ({
           name: agent.gpt_name,
           label: agent.gpt_name,
