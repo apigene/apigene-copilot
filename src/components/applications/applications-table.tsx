@@ -42,10 +42,12 @@ import {
   Trash2,
   Loader2,
   Plus,
+  Download,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import InstallApplicationDialog from "./install-application-dialog";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -133,6 +135,7 @@ export function ApplicationsTable() {
   const [applicationToDelete, setApplicationToDelete] =
     useState<ApplicationData | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [installDialogOpen, setInstallDialogOpen] = useState(false);
 
   const pageSize = 20;
   const apiClient = useApigeneApi();
@@ -169,6 +172,48 @@ export function ApplicationsTable() {
 
     fetchData();
   }, []); // Remove apiClient dependency to prevent infinite loop
+
+  // Handle install dialog
+  const handleInstallNewApp = () => {
+    setInstallDialogOpen(true);
+  };
+
+  const handleInstallDialogClose = () => {
+    setInstallDialogOpen(false);
+  };
+
+  const handleInstallSuccess = (apiName: string) => {
+    setInstallDialogOpen(false);
+    // Refresh the data
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const result = await apiClient.get("/api/specs", {
+          queryParams: { include_all: true },
+        });
+
+        if (Array.isArray(result)) {
+          setData(result);
+        } else {
+          console.error(
+            "[ApplicationsTable] Expected array but got:",
+            typeof result,
+            result,
+          );
+          setError("Invalid data format received from API");
+        }
+      } catch (err) {
+        console.error("[ApplicationsTable] Error fetching data:", err);
+        setError(err instanceof Error ? err.message : "Failed to fetch data");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+    router.push(`/applications/${apiName}`); // Navigate to the installed application
+  };
 
   // Handle application deletion
   const handleDeleteApplication = async () => {
@@ -335,10 +380,18 @@ export function ApplicationsTable() {
           <div className="flex items-center gap-2">
             <Button
               onClick={() => router.push("/applications/new")}
+              variant="outline"
               className="flex items-center gap-2"
             >
               <Plus className="h-4 w-4" />
               New App
+            </Button>
+            <Button
+              onClick={handleInstallNewApp}
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Install New Application
             </Button>
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -573,6 +626,12 @@ export function ApplicationsTable() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <InstallApplicationDialog
+        open={installDialogOpen}
+        onClose={handleInstallDialogClose}
+        onSuccess={handleInstallSuccess}
+      />
     </Card>
   );
 }
