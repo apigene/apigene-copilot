@@ -219,6 +219,8 @@ export const ActionsTable = () => {
   const [expandedSections, setExpandedSections] = useState({
     request: true,
     response: true,
+    responseContent: true,
+    rawResponseData: true,
   });
   const [filters, setFilters] = useState({
     statusCode: "",
@@ -543,7 +545,7 @@ export const ActionsTable = () => {
           open={!!selectedInteraction}
           onOpenChange={() => setSelectedInteraction(null)}
         >
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+          <DialogContent className="sm:max-w-6xl max-h-[90vh] overflow-hidden">
             <DialogHeader>
               <DialogTitle>Action Details</DialogTitle>
             </DialogHeader>
@@ -575,16 +577,12 @@ export const ActionsTable = () => {
               </div>
 
               {/* User Input */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">User Input</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {selectedInteraction.user_input}
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="bg-muted/50 rounded-lg p-3">
+                <h4 className="text-sm font-semibold mb-2">User Input</h4>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap max-h-32 overflow-y-auto">
+                  {selectedInteraction.user_input}
+                </p>
+              </div>
 
               {/* Request Data */}
               <Card>
@@ -647,31 +645,65 @@ export const ActionsTable = () => {
                       typeof selectedInteraction.actions_result[0]
                         .response_content === "string" && (
                         <div>
-                          <h4 className="text-sm font-semibold mb-2">
-                            Response Content
-                          </h4>
-                          <pre className="text-xs bg-muted p-4 rounded-lg overflow-auto max-h-48 border">
-                            {
-                              selectedInteraction.actions_result[0]
-                                .response_content
+                          <div
+                            className="flex items-center justify-between cursor-pointer mb-2"
+                            onClick={() =>
+                              setExpandedSections((prev) => ({
+                                ...prev,
+                                responseContent: !prev.responseContent,
+                              }))
                             }
-                          </pre>
+                          >
+                            <h4 className="text-sm font-semibold">
+                              Response Content
+                            </h4>
+                            {expandedSections.responseContent ? (
+                              <ChevronUp className="w-4 h-4" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4" />
+                            )}
+                          </div>
+                          {expandedSections.responseContent && (
+                            <pre className="text-xs bg-muted p-4 rounded-lg overflow-auto max-h-48 border">
+                              {
+                                selectedInteraction.actions_result[0]
+                                  .response_content
+                              }
+                            </pre>
+                          )}
                         </div>
                       )}
 
                     {/* Raw Response Data */}
                     <div>
-                      <h4 className="text-sm font-semibold mb-2">
-                        Raw Response Data
-                      </h4>
-                      <pre className="text-xs bg-muted p-4 rounded-lg overflow-auto max-h-96">
-                        {JSON.stringify(
-                          selectedInteraction.actions_result[0]?.raw_data
-                            ?.response || {},
-                          null,
-                          2,
+                      <div
+                        className="flex items-center justify-between cursor-pointer mb-2"
+                        onClick={() =>
+                          setExpandedSections((prev) => ({
+                            ...prev,
+                            rawResponseData: !prev.rawResponseData,
+                          }))
+                        }
+                      >
+                        <h4 className="text-sm font-semibold">
+                          Raw Response Data
+                        </h4>
+                        {expandedSections.rawResponseData ? (
+                          <ChevronUp className="w-4 h-4" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4" />
                         )}
-                      </pre>
+                      </div>
+                      {expandedSections.rawResponseData && (
+                        <pre className="text-xs bg-muted p-4 rounded-lg overflow-auto max-h-96">
+                          {JSON.stringify(
+                            selectedInteraction.actions_result[0]?.raw_data
+                              ?.response || {},
+                            null,
+                            2,
+                          )}
+                        </pre>
+                      )}
                     </div>
                   </CardContent>
                 )}
