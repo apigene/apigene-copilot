@@ -33,6 +33,7 @@ import {
   Lock,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRouter } from "next/navigation";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -96,6 +97,7 @@ function ApplicationsTableSkeleton() {
 }
 
 export function ApplicationsTable() {
+  const router = useRouter();
   const [data, setData] = useState<ApplicationData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -413,12 +415,9 @@ export function ApplicationsTable() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
                             <DropdownMenuItem
-                              onClick={() => console.log("View details", item)}
-                            >
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => console.log("Edit", item)}
+                              onClick={() =>
+                                router.push(`/applications/${item.api_name}`)
+                              }
                             >
                               Edit
                             </DropdownMenuItem>

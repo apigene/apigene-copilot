@@ -1,3 +1,10 @@
+export interface LlmSummary {
+  summary: string;
+  keywords: string[];
+  domain: string;
+  product_name: string;
+}
+
 export interface ApplicationData {
   api_title: string;
   api_name: string;
@@ -6,7 +13,7 @@ export interface ApplicationData {
   server_url: string;
   server_url_options: any[];
   examples: any[];
-  llm_summary: string | null;
+  llm_summary: LlmSummary | null;
   llm_app_categories: string | null;
   llm_use_cases_content: string | null;
   created_by: string;
@@ -20,5 +27,6 @@ export interface ApplicationData {
   common_parameters: Record<string, any>;
   user_input_templates: any;
   global_spec: boolean;
+  shared_security_info: boolean;
   agentic_metadata: any[];
 }

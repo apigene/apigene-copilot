@@ -342,6 +342,55 @@ export function useApigeneApi() {
     [client],
   );
 
+  const specGet = useCallback(
+    async (name: string) => {
+      return client.get(`/api/spec/${name}`);
+    },
+    [client],
+  );
+
+  const specUpdate = useCallback(
+    async (name: string, data: any) => {
+      return client.post(`/api/spec/${name}/update`, data);
+    },
+    [client],
+  );
+
+  const specGetInstructions = useCallback(
+    async (name: string) => {
+      return client.get(`/api/spec/instructions/${name}`);
+    },
+    [client],
+  );
+
+  const specCreateInstructions = useCallback(
+    async (data: any) => {
+      return client.post(`/api/spec/instructions`, data);
+    },
+    [client],
+  );
+
+  const specGetAgenticMetadata = useCallback(
+    async (name: string) => {
+      return client.get(`/api/spec/${name}/agentic_metadata`);
+    },
+    [client],
+  );
+
+  const specUpdateAgenticMetadata = useCallback(
+    async (name: string, data: any) => {
+      return client.post(`/api/spec/${name}/update_agentic_metadata`, data);
+    },
+    [client],
+  );
+
+  const specGetOperations = useCallback(
+    async (name: string) => {
+      return client.get(`/api/spec/${name}/operations`);
+    },
+    [client],
+  );
+
   return useMemo(
     () => ({
       // Spread all the original client methods
@@ -356,6 +405,17 @@ export function useApigeneApi() {
       interactionList,
       interactionCreate,
       interactionSummary,
+      // Spec general methods
+      specGet,
+      specUpdate,
+      // Spec security (instructions) methods
+      specGetInstructions,
+      specCreateInstructions,
+      // Spec agentic metadata methods
+      specGetAgenticMetadata,
+      specUpdateAgenticMetadata,
+      // Spec operations methods
+      specGetOperations,
     }),
     [client, interactionList, interactionCreate, interactionSummary],
   );
