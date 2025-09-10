@@ -3,12 +3,13 @@
 import {
   AudioWaveformIcon,
   ChevronDown,
+  ChevronUp,
   CornerRightUp,
   PlusIcon,
   Square,
   XIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "ui/button";
 import { notImplementedToast } from "ui/shared-toast";
 import { UIMessage, UseChatHelpers } from "@ai-sdk/react";
@@ -76,6 +77,7 @@ export default function PromptInput({
   disabledMention,
 }: PromptInputProps) {
   const t = useTranslations("Chat");
+  const [isToolStackExpanded, setIsToolStackExpanded] = useState(false);
 
   const [globalModel, threadMentions, appStoreMutate] = appStore(
     useShallow((state) => [
@@ -215,7 +217,7 @@ export default function PromptInput({
     });
   };
 
-  // Handle ESC key to clear mentions
+  // Handle ESC key to clear mentions and toggle tool stack
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && mentions.length > 0 && threadId) {
@@ -230,10 +232,24 @@ export default function PromptInput({
         }));
         editorRef.current?.commands.focus();
       }
+
+      // Toggle tool stack with Ctrl/Cmd + T
+      if ((e.ctrlKey || e.metaKey) && e.key === "t" && mentions.length > 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsToolStackExpanded(!isToolStackExpanded);
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [mentions.length, threadId, appStoreMutate]);
+  }, [mentions.length, threadId, appStoreMutate, isToolStackExpanded]);
+
+  // Auto-collapse when mentions change
+  useEffect(() => {
+    if (mentions.length === 0) {
+      setIsToolStackExpanded(false);
+    }
+  }, [mentions.length]);
 
   useEffect(() => {
     if (!editorRef.current) return;
@@ -245,63 +261,156 @@ export default function PromptInput({
         <fieldset className="flex w-full min-w-0 max-w-full flex-col px-4">
           <div className="shadow-lg overflow-hidden rounded-4xl backdrop-blur-sm transition-all duration-200 bg-muted/60 relative flex w-full flex-col cursor-text z-10 items-stretch focus-within:bg-muted hover:bg-muted focus-within:ring-muted hover:ring-muted">
             {mentions.length > 0 && (
-              <div className="bg-input rounded-b-sm rounded-t-3xl p-3 flex flex-col gap-4 mx-2 my-2">
-                {mentions.map((mention, i) => {
-                  return (
-                    <div key={i} className="flex items-center gap-2">
-                      {mention.type === "workflow" ||
-                      mention.type === "agent" ? (
-                        <Avatar
-                          className="size-6 p-1 ring ring-border rounded-full flex-shrink-0"
-                          style={mention.icon?.style}
+              <div className="bg-input rounded-b-sm rounded-t-3xl mx-2 my-2 overflow-hidden transition-all duration-300">
+                {/* Collapsed view - always visible */}
+                <div className="p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className="flex items-center gap-1">
+                      {mentions.slice(0, 3).map((mention, i) => {
+                        return (
+                          <div key={i} className="flex items-center">
+                            {mention.type === "workflow" ||
+                            mention.type === "agent" ? (
+                              <Avatar
+                                className="size-5 p-0.5 ring ring-border rounded-full flex-shrink-0"
+                                style={mention.icon?.style}
+                              >
+                                <AvatarImage
+                                  src={
+                                    mention.icon?.value ||
+                                    EMOJI_DATA[i % EMOJI_DATA.length]
+                                  }
+                                />
+                                <AvatarFallback className="text-xs">
+                                  {mention.name.slice(0, 1)}
+                                </AvatarFallback>
+                              </Avatar>
+                            ) : (
+                              <div className="size-5 flex items-center justify-center ring ring-border rounded-full flex-shrink-0 p-0.5">
+                                {mention.type == "mcpServer" ? (
+                                  <MCPIcon className="size-3" />
+                                ) : (
+                                  <DefaultToolIcon
+                                    name={mention.name as DefaultToolName}
+                                    className="size-3"
+                                  />
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      {mentions.length > 3 && (
+                        <div className="size-5 flex items-center justify-center ring ring-border rounded-full bg-muted text-xs font-semibold">
+                          +{mentions.length - 3}
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-sm font-medium text-muted-foreground ml-2">
+                      {mentions.length} tool{mentions.length !== 1 ? "s" : ""}{" "}
+                      selected
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs hover:bg-muted"
+                          onClick={() =>
+                            setIsToolStackExpanded(!isToolStackExpanded)
+                          }
                         >
-                          <AvatarImage
-                            src={
-                              mention.icon?.value ||
-                              EMOJI_DATA[i % EMOJI_DATA.length]
-                            }
-                          />
-                          <AvatarFallback>
-                            {mention.name.slice(0, 1)}
-                          </AvatarFallback>
-                        </Avatar>
-                      ) : (
-                        <Button className="size-6 flex items-center justify-center ring ring-border rounded-full flex-shrink-0 p-0.5">
-                          {mention.type == "mcpServer" ? (
-                            <MCPIcon className="size-3.5" />
+                          {isToolStackExpanded ? (
+                            <>
+                              <ChevronUp className="size-3 mr-1" />
+                              Hide
+                            </>
                           ) : (
-                            <DefaultToolIcon
-                              name={mention.name as DefaultToolName}
-                              className="size-3.5"
-                            />
+                            <>
+                              <ChevronDown className="size-3 mr-1" />
+                              Show
+                            </>
                           )}
                         </Button>
-                      )}
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {isToolStackExpanded ? "Hide tools" : "Show all tools"}{" "}
+                        (⌘T)
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </div>
 
-                      <div className="flex flex-col flex-1 min-w-0">
-                        <span className="text-sm font-semibold truncate">
-                          {mention.name}
-                        </span>
-                        {mention.description ? (
-                          <span className="text-muted-foreground text-xs truncate">
-                            {mention.description}
-                          </span>
-                        ) : null}
-                      </div>
-                      <Button
-                        variant={"ghost"}
-                        size={"icon"}
-                        disabled={!threadId}
-                        className="rounded-full hover:bg-input! flex-shrink-0"
-                        onClick={() => {
-                          deleteMention(mention);
-                        }}
-                      >
-                        <XIcon />
-                      </Button>
-                    </div>
-                  );
-                })}
+                {/* Expanded view - conditionally visible */}
+                <div
+                  className={`transition-all duration-300 overflow-hidden ${
+                    isToolStackExpanded
+                      ? "max-h-96 opacity-100"
+                      : "max-h-0 opacity-0"
+                  }`}
+                >
+                  <div className="px-3 pb-3 flex flex-col gap-3 border-t border-border/50">
+                    {mentions.map((mention, i) => {
+                      return (
+                        <div key={i} className="flex items-center gap-2">
+                          {mention.type === "workflow" ||
+                          mention.type === "agent" ? (
+                            <Avatar
+                              className="size-6 p-1 ring ring-border rounded-full flex-shrink-0"
+                              style={mention.icon?.style}
+                            >
+                              <AvatarImage
+                                src={
+                                  mention.icon?.value ||
+                                  EMOJI_DATA[i % EMOJI_DATA.length]
+                                }
+                              />
+                              <AvatarFallback>
+                                {mention.name.slice(0, 1)}
+                              </AvatarFallback>
+                            </Avatar>
+                          ) : (
+                            <Button className="size-6 flex items-center justify-center ring ring-border rounded-full flex-shrink-0 p-0.5">
+                              {mention.type == "mcpServer" ? (
+                                <MCPIcon className="size-3.5" />
+                              ) : (
+                                <DefaultToolIcon
+                                  name={mention.name as DefaultToolName}
+                                  className="size-3.5"
+                                />
+                              )}
+                            </Button>
+                          )}
+
+                          <div className="flex flex-col flex-1 min-w-0">
+                            <span className="text-sm font-semibold truncate">
+                              {mention.name}
+                            </span>
+                            {mention.description ? (
+                              <span className="text-muted-foreground text-xs truncate">
+                                {mention.description}
+                              </span>
+                            ) : null}
+                          </div>
+                          <Button
+                            variant={"ghost"}
+                            size={"icon"}
+                            disabled={!threadId}
+                            className="rounded-full hover:bg-input! flex-shrink-0"
+                            onClick={() => {
+                              deleteMention(mention);
+                            }}
+                          >
+                            <XIcon />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             )}
             <div className="flex flex-col gap-3.5 px-5 pt-2 pb-4">
