@@ -24,21 +24,20 @@ import {
   DropdownMenuTrigger,
 } from "ui/dropdown-menu";
 import { useRouter } from "next/navigation";
-import { useAccessToken } from "ui/access-token-provider";
 import { Avatar, AvatarImage } from "ui/avatar";
-
-const BRANDFETCH_CLIENT_ID = "1idy-5x7B4rsvDDat7C";
+import { useApigeneApi } from "@/lib/api/apigene-client";
 
 const LightRays = dynamic(() => import("@/components/ui/light-rays"), {
   ssr: false,
 });
 
 export default function MCPDashboard({ message }: { message?: string }) {
-  const { token } = useAccessToken();
+  const token = process.env.NEXT_PUBLIC_APIGENE_ORG_TOKEN;
   const [apigeneAgents, setApigeneAgents] = useState<ApigeneAgent[]>([]);
   const [isAgentsLoading, setIsAgentsLoading] = useState(false);
   const t = useTranslations("MCP");
   const router = useRouter();
+  const apiClient = useApigeneApi();
   const {
     data: mcpList,
     isLoading,
@@ -126,20 +125,16 @@ export default function MCPDashboard({ message }: { message?: string }) {
   }, [token]);
 
   const fetchApigeneAgents = async () => {
-    const response = await fetch(
-      "https://dev.apigene.ai/api/gpts/list?include_private_gpts=false&include_public_gpts=true",
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
+    const response = await apiClient.get(
+      "api/gpts/list?include_private_gpts=false&include_public_gpts=true",
     );
-    const data = await response.json();
     const getIconUrl = (icon_url: string) => {
       const domain = icon_url.replace("https://logo.clearbit.com/", "");
-      return `https://cdn.brandfetch.io/${encodeURIComponent(domain)}?c=${BRANDFETCH_CLIENT_ID}&fallback=https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}`;
+      const brandfetchClientId = process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID;
+
+      return `https://cdn.brandfetch.io/${encodeURIComponent(domain)}?c=${brandfetchClientId}&fallback=https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}`;
     };
-    const agentConfigs = data.map((agent: any) => ({
+    const agentConfigs = response.map((agent: any) => ({
       name: agent.gpt_name,
       label: agent.gpt_name,
       config: {

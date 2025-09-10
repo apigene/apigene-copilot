@@ -19,8 +19,7 @@ export function ApplicationIcon({
   const [imageLoading, setImageLoading] = useState(true);
 
   // Get Brandfetch client ID from environment or use a default
-  const brandfetchClientId =
-    process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID || "default";
+  const brandfetchClientId = process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID;
 
   // Construct the Brandfetch URL with fallback to Google favicons
   const brandfetchUrl = `https://cdn.brandfetch.io/${encodeURIComponent(domainUrl)}?c=${brandfetchClientId}&fallback=https://www.google.com/s2/favicons?domain=${encodeURIComponent(domainUrl)}`;

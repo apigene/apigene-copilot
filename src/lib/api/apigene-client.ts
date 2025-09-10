@@ -2,7 +2,7 @@
  * Apigene API Client - A lightweight API client for Apigene services
  */
 
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
 
 // Types
@@ -63,6 +63,13 @@ export class ApigeneClient {
    */
   setTokenGetter(getToken: () => Promise<string | null>) {
     this.getToken = getToken;
+  }
+
+  /**
+   * Get the base URL
+   */
+  getBaseUrl(): string {
+    return this.baseUrl;
   }
 
   /**
@@ -311,34 +318,47 @@ export function useApigeneApi() {
   }, [getToken]);
 
   // Add interaction methods
-  const interactionList = async (
-    filters: Record<string, any> = {},
-    params: Record<string, any> = {},
-  ) => {
-    return client.post("/api/interaction/list", filters, params);
-  };
+  const interactionList = useCallback(
+    async (
+      filters: Record<string, any> = {},
+      params: Record<string, any> = {},
+    ) => {
+      return client.post("/api/interaction/list", filters, params);
+    },
+    [client],
+  );
 
-  const interactionCreate = async (data: any) => {
-    return client.post("/api/interaction/create", data);
-  };
+  const interactionCreate = useCallback(
+    async (data: any) => {
+      return client.post("/api/interaction/create", data);
+    },
+    [client],
+  );
 
-  const interactionSummary = async (data: any) => {
-    return client.post("/api/interaction/summary", data);
-  };
+  const interactionSummary = useCallback(
+    async (data: any) => {
+      return client.post("/api/interaction/summary", data);
+    },
+    [client],
+  );
 
-  return {
-    // Spread all the original client methods
-    get: client.get.bind(client),
-    post: client.post.bind(client),
-    put: client.put.bind(client),
-    delete: client.delete.bind(client),
-    patch: client.patch.bind(client),
-    request: client.request.bind(client),
-    // Add interaction methods
-    interactionList,
-    interactionCreate,
-    interactionSummary,
-  };
+  return useMemo(
+    () => ({
+      // Spread all the original client methods
+      get: client.get.bind(client),
+      post: client.post.bind(client),
+      put: client.put.bind(client),
+      delete: client.delete.bind(client),
+      patch: client.patch.bind(client),
+      request: client.request.bind(client),
+      getBaseUrl: client.getBaseUrl.bind(client),
+      // Add interaction methods
+      interactionList,
+      interactionCreate,
+      interactionSummary,
+    }),
+    [client, interactionList, interactionCreate, interactionSummary],
+  );
 }
 
 // Export error class for error handling
