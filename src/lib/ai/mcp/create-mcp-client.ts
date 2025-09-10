@@ -28,6 +28,7 @@ import { BASE_URL, IS_MCP_SERVER_REMOTE_ONLY, IS_VERCEL_ENV } from "lib/const";
 import { UnauthorizedError } from "@modelcontextprotocol/sdk/client/auth.js";
 import { PgOAuthClientProvider } from "./pg-oauth-provider";
 import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
+import { getSession } from "auth/server";
 
 type ClientOptions = {
   autoDisconnectSeconds?: number;
@@ -117,6 +118,27 @@ export class MCPClient {
       error: this.error,
       toolInfo: this.toolInfo,
     };
+  }
+
+  private async isApigeneServer(): Promise<boolean> {
+    if (!isMaybeRemoteConfig(this.serverConfig)) {
+      return false;
+    }
+    const config = MCPRemoteConfigZodSchema.parse(this.serverConfig);
+    return !!(config.headers && "apigene-api-key" in config.headers);
+  }
+
+  private async getApigeneToken(): Promise<string | null> {
+    try {
+      const session = await getSession();
+      return session?.accessToken || null;
+    } catch (error) {
+      this.logger.warn(
+        "Failed to get user session token for Apigene server:",
+        error,
+      );
+      return null;
+    }
   }
 
   private createOAuthProvider(oauthState?: string) {
@@ -228,10 +250,29 @@ export class MCPClient {
         const config = MCPRemoteConfigZodSchema.parse(this.serverConfig);
         const abortController = new AbortController();
         const url = new URL(config.url);
+
+        // Check if this is an Apigene server and get user session token
+        const isApigene = await this.isApigeneServer();
+        const headers = { ...config.headers };
+
+        if (isApigene) {
+          const userToken = await this.getApigeneToken();
+          if (userToken) {
+            headers["apigene-api-key"] = userToken;
+            this.logger.info(
+              "Using authenticated user session token for Apigene server",
+            );
+          } else {
+            this.logger.warn(
+              "No user session token available for Apigene server",
+            );
+          }
+        }
+
         try {
           this.transport = new StreamableHTTPClientTransport(url, {
             requestInit: {
-              headers: config.headers,
+              headers,
               signal: abortController.signal,
             },
             authProvider: this.createOAuthProvider(oauthState),
@@ -261,7 +302,7 @@ export class MCPClient {
 
             this.transport = new SSEClientTransport(url, {
               requestInit: {
-                headers: config.headers,
+                headers,
                 signal: abortController.signal,
               },
               authProvider: this.createOAuthProvider(oauthState),

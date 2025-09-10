@@ -8,6 +8,7 @@ import { Button } from "ui/button";
 import { useEffect, useState } from "react";
 import { Avatar, AvatarImage } from "ui/avatar";
 import { useApigeneApi } from "@/lib/api/apigene-client";
+import { useAuth } from "@clerk/nextjs";
 
 export type ApigeneAgent = {
   name: string;
@@ -24,7 +25,8 @@ export type ApigeneAgent = {
 export function MCPOverview() {
   const [isListLoading, setIsListLoading] = useState(false);
   const [apigeneAgents, setApigeneAgents] = useState<ApigeneAgent[]>([]);
-  const token = process.env.NEXT_PUBLIC_APIGENE_ORG_TOKEN;
+  const { getToken } = useAuth();
+  const [userToken, setUserToken] = useState<string | null>(null);
   const apiClient = useApigeneApi();
 
   const t = useTranslations("MCP");
@@ -40,12 +42,30 @@ export function MCPOverview() {
     window.location.href = `/mcp/create?${params.toString()}`;
   };
 
+  // Get user session token
+  useEffect(() => {
+    const fetchUserToken = async () => {
+      try {
+        const token = await getToken({
+          template: process.env.NEXT_PUBLIC_AUTH_CLERK_JWT_TPL,
+        });
+        setUserToken(token);
+      } catch (error) {
+        console.error("Failed to get user token:", error);
+        setUserToken(null);
+      }
+    };
+    fetchUserToken();
+  }, [getToken]);
+
   useEffect(() => {
     const fetchApigeneAgents = async () => {
+      if (!userToken) return;
+
       setIsListLoading(true);
       try {
         const response = await apiClient.get(
-          `api/gpts/list?include_private_gpts=false&include_public_gpts=true`,
+          `api/gpts/list?include_private_gpts=true&include_public_gpts=true`,
         );
 
         if (!Array.isArray(response)) {
@@ -67,7 +87,7 @@ export function MCPOverview() {
           config: {
             url: `${apiClient.getBaseUrl()}/${agent.gpt_name}/mcp`,
             headers: {
-              "apigene-api-key": `${token}`,
+              "apigene-api-key": `${userToken}`,
             },
           },
           icon: () => (
@@ -83,7 +103,7 @@ export function MCPOverview() {
       }
     };
     fetchApigeneAgents();
-  }, []);
+  }, [userToken, apiClient]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -106,10 +126,10 @@ export function MCPOverview() {
             <ArrowUpRight className="size-6" />
           </div>
 
-          {!token && (
+          {!userToken && (
             <div className="flex flex-col gap-4">
               <p className="text-sm text-destructive">
-                Please set your access token to see the list of MCP servers
+                Please sign in to see the list of MCP servers
               </p>
             </div>
           )}

@@ -11,10 +11,8 @@ export async function register() {
         console.error(e);
         process.exit(1);
       });
-      const initMCPManager = await import("./lib/ai/mcp/mcp-manager").then(
-        (m) => m.initMCPManager,
-      );
-      await initMCPManager();
+      // MCP clients manager will be initialized lazily when first accessed
+      // This improves cold start performance by deferring initialization until needed
     }
   }
 }

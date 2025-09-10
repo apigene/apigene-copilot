@@ -26,15 +26,17 @@ import {
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarImage } from "ui/avatar";
 import { useApigeneApi } from "@/lib/api/apigene-client";
+import { useAuth } from "@clerk/nextjs";
 
 const LightRays = dynamic(() => import("@/components/ui/light-rays"), {
   ssr: false,
 });
 
 export default function MCPDashboard({ message }: { message?: string }) {
-  const token = process.env.NEXT_PUBLIC_APIGENE_ORG_TOKEN;
+  const { getToken } = useAuth();
   const [apigeneAgents, setApigeneAgents] = useState<ApigeneAgent[]>([]);
   const [isAgentsLoading, setIsAgentsLoading] = useState(false);
+  const [userToken, setUserToken] = useState<string | null>(null);
   const t = useTranslations("MCP");
   const router = useRouter();
   const apiClient = useApigeneApi();
@@ -99,34 +101,52 @@ export default function MCPDashboard({ message }: { message?: string }) {
     setShowValidating(false);
   }, [isValidating]);
 
+  // Get user session token
+  useEffect(() => {
+    const fetchUserToken = async () => {
+      try {
+        const token = await getToken({
+          template: process.env.NEXT_PUBLIC_AUTH_CLERK_JWT_TPL,
+        });
+        setUserToken(token);
+      } catch (error) {
+        console.error("Failed to get user token:", error);
+        setUserToken(null);
+      }
+    };
+    fetchUserToken();
+  }, [getToken]);
+
   useEffect(() => {
     if (message) {
       toast(<p className="whitespace-pre-wrap break-all">{message}</p>, {
         id: "mcp-list-message",
       });
     }
-    if (!token) {
+    if (!userToken) {
       toast(
         <p className="whitespace-pre-wrap break-all">
-          Please set your access token to see the list of MCP servers
+          Please sign in to see the list of MCP servers
         </p>,
         {
           id: "mcp-list-message",
         },
       );
     }
-  }, []);
+  }, [message, userToken]);
 
   useEffect(() => {
-    if (token) {
+    if (userToken) {
       setIsAgentsLoading(true);
       fetchApigeneAgents();
     }
-  }, [token]);
+  }, [userToken]);
 
   const fetchApigeneAgents = async () => {
+    if (!userToken) return;
+
     const response = await apiClient.get(
-      "api/gpts/list?include_private_gpts=false&include_public_gpts=true",
+      "api/gpts/list?include_private_gpts=true&include_public_gpts=true",
     );
     const getIconUrl = (icon_url: string) => {
       const domain = icon_url.replace("https://logo.clearbit.com/", "");
@@ -140,7 +160,7 @@ export default function MCPDashboard({ message }: { message?: string }) {
       config: {
         url: `https://dev.apigene.ai/${agent.gpt_name}/mcp`,
         headers: {
-          "apigene-api-key": `${token}`,
+          "apigene-api-key": `${userToken}`,
         },
       },
       icon: () => (

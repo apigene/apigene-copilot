@@ -143,7 +143,7 @@ export class ApigeneClient {
     const headers = await this.buildHeaders(customHeaders);
 
     // Log before making the request
-    console.log(`Reqeust >> ${method}: ${url}`, {
+    console.log(`Reqeust >> ${method}: ${url} ${headers}`, {
       endpoint,
       method,
       queryParams,
