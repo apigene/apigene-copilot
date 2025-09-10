@@ -65,9 +65,12 @@ export function MCPOverview() {
 
       setIsListLoading(true);
       try {
-        const response = await apiClient.get(
-          `api/gpts/list?include_private_gpts=true&include_public_gpts=true`,
-        );
+        const response = await apiClient.get(`api/gpts/list`, {
+          queryParams: {
+            include_private_gpts: true,
+            include_public_gpts: true,
+          },
+        });
 
         if (!Array.isArray(response)) {
           console.error(

@@ -146,9 +146,12 @@ export default function MCPDashboard({ message }: { message?: string }) {
   const fetchApigeneAgents = async () => {
     if (!userToken) return;
 
-    const response = await apiClient.get(
-      "api/gpts/list?include_private_gpts=true&include_public_gpts=true",
-    );
+    const response = await apiClient.get("api/gpts/list", {
+      queryParams: {
+        include_private_gpts: true,
+        include_public_gpts: true,
+      },
+    });
     const agentConfigs = response.map((agent: any) => ({
       name: agent.gpt_name,
       label: agent.gpt_name,
