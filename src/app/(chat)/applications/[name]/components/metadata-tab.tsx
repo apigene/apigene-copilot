@@ -76,7 +76,7 @@ export function MetadataTab({ application }: MetadataTabProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // Fetch agentic metadata
@@ -143,7 +143,7 @@ export function MetadataTab({ application }: MetadataTabProps) {
 
   // Paginated metadata
   const paginatedMetadata = useMemo(() => {
-    const startIndex = (currentPage - 1) * rowsPerPage;
+    const startIndex = currentPage * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
     return filteredMetadata.slice(startIndex, endIndex);
   }, [filteredMetadata, currentPage, rowsPerPage]);
@@ -155,12 +155,12 @@ export function MetadataTab({ application }: MetadataTabProps) {
 
   const handleRowsPerPageChange = (newRowsPerPage: number) => {
     setRowsPerPage(newRowsPerPage);
-    setCurrentPage(1); // Reset to first page when changing rows per page
+    setCurrentPage(0); // Reset to first page when changing rows per page
   };
 
   // Reset pagination when search term changes
   useEffect(() => {
-    setCurrentPage(1);
+    setCurrentPage(0);
   }, [searchTerm]);
 
   // Open dialog for viewing/editing operation
@@ -236,9 +236,9 @@ export function MetadataTab({ application }: MetadataTabProps) {
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardContent>
+    <div className="w-full max-w-full overflow-hidden h-full flex flex-col">
+      <Card className="flex flex-col h-full">
+        <CardContent className="sticky top-0 z-10 bg-background border-b flex-shrink-0">
           <div className="flex items-center gap-4 mb-6">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -251,219 +251,261 @@ export function MetadataTab({ application }: MetadataTabProps) {
             </div>
           </div>
         </CardContent>
-      </Card>
 
-      {filteredMetadata.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center py-8">
-              <Database className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">
-                {searchTerm
-                  ? "No matching operations found"
-                  : "No agentic metadata available"}
-              </h3>
-              <p className="text-muted-foreground">
-                {searchTerm
-                  ? "Try adjusting your search terms"
-                  : "Agentic metadata will appear here once it's generated for your API operations."}
-              </p>
+        <div className="flex flex-col flex-1 min-h-0">
+          {filteredMetadata.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center py-8">
+                <Database className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium mb-2">
+                  {searchTerm
+                    ? "No matching operations found"
+                    : "No agentic metadata available"}
+                </h3>
+                <p className="text-muted-foreground">
+                  {searchTerm
+                    ? "Try adjusting your search terms"
+                    : "Agentic metadata will appear here once it's generated for your API operations."}
+                </p>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="p-0">
-            {/* Desktop Table View */}
-            <div className="hidden lg:block overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-center">Rating</TableHead>
-                    <TableHead className="text-center">Operation ID</TableHead>
-                    <TableHead className="text-center">Description</TableHead>
-                    <TableHead className="text-center w-[100px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedMetadata.map((item) => (
-                    <TableRow key={item.operationId}>
-                      <TableCell className="text-center">
-                        {item.rating}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {item.operationId}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {item.description}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openOperationDialog(item)}
-                          className="flex items-center gap-2"
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                          Details
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+          ) : (
+            <div className="flex flex-col flex-1 min-h-0">
+              <Card className="flex flex-col flex-1 min-h-0">
+                <CardContent className="p-0 flex flex-col flex-1 min-h-0">
+                  {/* Desktop Table View */}
+                  <div className="hidden lg:block overflow-x-auto flex-1 min-h-0">
+                    <div className="h-full overflow-y-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="text-center">
+                              Rating
+                            </TableHead>
+                            <TableHead className="text-center">
+                              Operation ID
+                            </TableHead>
+                            <TableHead className="text-center">
+                              Description
+                            </TableHead>
+                            <TableHead className="text-center w-[100px]"></TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {paginatedMetadata.map((item) => (
+                            <TableRow key={item.operationId}>
+                              <TableCell className="text-center">
+                                {item.rating}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {item.operationId}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {item.description}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openOperationDialog(item)}
+                                  className="flex items-center gap-2"
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                  Details
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
 
-            {/* Mobile Card View */}
-            <div className="block lg:hidden p-4 space-y-3">
-              {paginatedMetadata.map((item) => (
-                <div
-                  key={item.operationId}
-                  className="border rounded-lg p-4 space-y-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">
-                        Rating: {item.rating}
-                      </Badge>
-                      <span className="font-medium text-sm">
-                        {item.operationId}
+                  {/* Mobile Card View */}
+                  <div className="block lg:hidden p-4 space-y-3 flex-1 min-h-0 overflow-y-auto">
+                    {paginatedMetadata.map((item) => (
+                      <div
+                        key={item.operationId}
+                        className="border rounded-lg p-4 space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              Rating: {item.rating}
+                            </Badge>
+                            <span className="font-medium text-sm">
+                              {item.operationId}
+                            </span>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openOperationDialog(item)}
+                            className="flex items-center gap-1"
+                          >
+                            <MoreVertical className="h-3 w-3" />
+                            Details
+                          </Button>
+                        </div>
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {item.description}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {filteredMetadata.length > 0 && (
+            <div className="sticky bottom-0 bg-background z-10 flex-shrink-0">
+              {/* Mobile/Tablet Pagination */}
+              <div className="block lg:hidden p-4 space-y-4">
+                <div className="text-center text-sm text-muted-foreground">
+                  Showing {currentPage * rowsPerPage + 1} to{" "}
+                  {Math.min(
+                    (currentPage + 1) * rowsPerPage,
+                    filteredMetadata.length,
+                  )}{" "}
+                  of {filteredMetadata.length} metadata
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 0}
+                    className="flex items-center gap-2"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+
+                  <span className="text-sm font-medium">
+                    {currentPage + 1} /{" "}
+                    {Math.ceil(filteredMetadata.length / rowsPerPage)}
+                  </span>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={
+                      currentPage >=
+                      Math.ceil(filteredMetadata.length / rowsPerPage) - 1
+                    }
+                    className="flex items-center gap-2"
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-sm text-muted-foreground">Show:</span>
+                  <Select
+                    value={rowsPerPage.toString()}
+                    onValueChange={(value) =>
+                      handleRowsPerPageChange(Number(value))
+                    }
+                  >
+                    <SelectTrigger className="h-8 w-[70px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent side="top">
+                      {[5, 10, 20, 30, 50].map((pageSize) => (
+                        <SelectItem key={pageSize} value={pageSize.toString()}>
+                          {pageSize}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Desktop Pagination */}
+              <div className="hidden lg:flex lg:items-center lg:justify-between gap-4 px-4 py-3">
+                <div className="text-sm text-muted-foreground">
+                  Showing {currentPage * rowsPerPage + 1} to{" "}
+                  {Math.min(
+                    (currentPage + 1) * rowsPerPage,
+                    filteredMetadata.length,
+                  )}{" "}
+                  of {filteredMetadata.length} metadata
+                </div>
+                <div className="flex items-center space-x-2 flex-wrap">
+                  <div className="flex items-center space-x-2">
+                    <p className="text-sm font-medium whitespace-nowrap">
+                      Rows per page
+                    </p>
+                    <Select
+                      value={rowsPerPage.toString()}
+                      onValueChange={(value) =>
+                        handleRowsPerPageChange(Number(value))
+                      }
+                    >
+                      <SelectTrigger className="h-8 w-[70px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent side="top">
+                        {[5, 10, 20, 30, 50].map((pageSize) => (
+                          <SelectItem
+                            key={pageSize}
+                            value={pageSize.toString()}
+                          >
+                            {pageSize}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 0}
+                      className="h-8 w-8 p-0"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <div className="flex items-center space-x-1">
+                      <span className="text-sm font-medium whitespace-nowrap">
+                        Page {currentPage + 1} of{" "}
+                        {Math.ceil(filteredMetadata.length / rowsPerPage)}
                       </span>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => openOperationDialog(item)}
-                      className="flex items-center gap-1"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={
+                        currentPage >=
+                        Math.ceil(filteredMetadata.length / rowsPerPage) - 1
+                      }
+                      className="h-8 w-8 p-0"
                     >
-                      <MoreVertical className="h-3 w-3" />
-                      Details
+                      <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {item.description}
-                  </p>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Pagination Controls */}
-      {filteredMetadata.length > 0 && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              {/* Rows per page selector */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">
-                  Rows per page:
-                </span>
-                <Select
-                  value={rowsPerPage.toString()}
-                  onValueChange={(value) =>
-                    handleRowsPerPageChange(Number(value))
-                  }
-                >
-                  <SelectTrigger className="w-[70px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5</SelectItem>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="20">20</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Page info */}
-              <div className="text-sm text-muted-foreground">
-                Showing{" "}
-                {Math.min(
-                  (currentPage - 1) * rowsPerPage + 1,
-                  filteredMetadata.length,
-                )}{" "}
-                to{" "}
-                {Math.min(currentPage * rowsPerPage, filteredMetadata.length)}{" "}
-                of {filteredMetadata.length} results
-              </div>
-
-              {/* Page navigation */}
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="flex items-center gap-1"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous
-                </Button>
-
-                <div className="flex items-center gap-1">
-                  {Array.from(
-                    {
-                      length: Math.ceil(filteredMetadata.length / rowsPerPage),
-                    },
-                    (_, i) => i + 1,
-                  )
-                    .filter((page) => {
-                      const totalPages = Math.ceil(
-                        filteredMetadata.length / rowsPerPage,
-                      );
-                      return (
-                        page === 1 ||
-                        page === totalPages ||
-                        (page >= currentPage - 1 && page <= currentPage + 1)
-                      );
-                    })
-                    .map((page, index, array) => (
-                      <div key={page} className="flex items-center gap-1">
-                        {index > 0 && array[index - 1] !== page - 1 && (
-                          <span className="text-muted-foreground">...</span>
-                        )}
-                        <Button
-                          variant={currentPage === page ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => handlePageChange(page)}
-                          className="w-8 h-8 p-0"
-                        >
-                          {page}
-                        </Button>
-                      </div>
-                    ))}
-                </div>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={
-                    currentPage ===
-                    Math.ceil(filteredMetadata.length / rowsPerPage)
-                  }
-                  className="flex items-center gap-1"
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </div>
 
-      {/* Metadata Details Modal */}
-      <MetadataDetailsModal
-        open={isDialogOpen}
-        onClose={closeDialog}
-        operation={selectedOperation}
-        application={application}
-        onUpdate={refreshMetadata}
-      />
+        {/* Metadata Details Modal */}
+        <MetadataDetailsModal
+          open={isDialogOpen}
+          onClose={closeDialog}
+          operation={selectedOperation}
+          application={application}
+          onUpdate={refreshMetadata}
+        />
+      </Card>
     </div>
   );
 }
