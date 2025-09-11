@@ -124,14 +124,6 @@ export function MCPOverview() {
             <ArrowUpRight className="size-6" />
           </div>
 
-          {!userToken && (
-            <div className="flex flex-col gap-4">
-              <p className="text-sm text-destructive">
-                Please sign in to see the list of MCP servers
-              </p>
-            </div>
-          )}
-
           {/* While Agents list is loading, show a loading spinner */}
           {isListLoading && <Loader className="size-8 z-20 animate-spin" />}
         </div>

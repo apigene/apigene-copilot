@@ -124,16 +124,6 @@ export default function MCPDashboard({ message }: { message?: string }) {
         id: "mcp-list-message",
       });
     }
-    if (!userToken) {
-      toast(
-        <p className="whitespace-pre-wrap break-all">
-          Please sign in to see the list of MCP servers
-        </p>,
-        {
-          id: "mcp-list-message",
-        },
-      );
-    }
   }, [message, userToken]);
 
   useEffect(() => {
