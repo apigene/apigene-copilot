@@ -56,7 +56,7 @@ async function ensurePyodideLoaded(): Promise<any> {
   if (isWorker) {
     try {
       (globalThis as any).importScripts(
-        "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js",
+        "https://cdn.jsdelivr.net/pyodide/v0.28.0/full/pyodide.js",
       );
       return (globalThis as any).loadPyodide;
     } catch {
@@ -64,7 +64,7 @@ async function ensurePyodideLoaded(): Promise<any> {
     }
   } else {
     const existingScript = document.querySelector<HTMLScriptElement>(
-      'script[src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"]',
+      'script[src="https://cdn.jsdelivr.net/pyodide/v0.28.0/full/pyodide.js"]',
     );
 
     if (existingScript) {
@@ -84,7 +84,7 @@ async function ensurePyodideLoaded(): Promise<any> {
     } else {
       await new Promise<void>((resolve, reject) => {
         const script = document.createElement("script");
-        script.src = "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js";
+        script.src = "https://cdn.jsdelivr.net/pyodide/v0.28.0/full/pyodide.js";
         script.async = true;
         script.onload = () => resolve();
         script.onerror = () =>
@@ -122,7 +122,7 @@ export async function safePythonRun({
     // Load Pyodide
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const pyodide = await loadPyodide({
-      indexURL: "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/",
+      indexURL: "https://cdn.jsdelivr.net/pyodide/v0.28.0/full/",
     });
 
     // Set up stdout capture
