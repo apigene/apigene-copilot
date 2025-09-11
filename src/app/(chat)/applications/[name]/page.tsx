@@ -24,6 +24,7 @@ import { SecurityTab } from "./components/security-tab";
 import { MetadataTab } from "./components/metadata-tab";
 import { CommonParametersTab } from "./components/common-parameters-tab";
 import { OperationsTab } from "./components/operations-tab";
+import { ApplicationIcon } from "@/components/applications/application-icon";
 
 export default function ApplicationEditPage() {
   const params = useParams();
@@ -171,13 +172,11 @@ export default function ApplicationEditPage() {
         </Button>
 
         <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
-            <span className="text-lg font-semibold">
-              {application.api_title?.charAt(0) ||
-                application.api_name?.charAt(0) ||
-                "A"}
-            </span>
-          </div>
+          <ApplicationIcon
+            domainUrl={application.domain_url || ""}
+            apiName={application.api_name || ""}
+            className="h-12 w-12"
+          />
           <div>
             <h1 className="text-2xl font-bold">
               {application.api_title || application.api_name}
