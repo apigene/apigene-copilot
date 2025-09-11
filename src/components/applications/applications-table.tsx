@@ -41,7 +41,7 @@ import {
   Lock,
   Trash2,
   Loader2,
-  Plus,
+  CloudUpload,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
@@ -377,21 +377,6 @@ export function ApplicationsTable() {
         <div className="flex items-center justify-between">
           <CardTitle>Applications ({data.length})</CardTitle>
           <div className="flex items-center gap-2">
-            <Button
-              onClick={() => router.push("/applications/new")}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              New App
-            </Button>
-            <Button
-              onClick={handleInstallNewApp}
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Install New Application
-            </Button>
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -430,6 +415,14 @@ export function ApplicationsTable() {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+            <Button
+              onClick={handleInstallNewApp}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <CloudUpload className="h-4 w-4" />
+              New Appplication
+            </Button>
           </div>
         </div>
       </CardHeader>
