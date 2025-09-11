@@ -1,6 +1,6 @@
 "use client";
 
-import { getToolName, ToolUIPart, UIMessage } from "ai";
+import { getToolName, ToolUIPart, UIMessage, isToolUIPart } from "ai";
 import {
   Check,
   Copy,
@@ -536,6 +536,73 @@ export const AssistMessagePart = memo(function AssistMessagePart({
                           )}
                         </div>
                       </div>
+
+                      {/* Tool Response Size Information */}
+                      {(() => {
+                        const toolParts = message.parts.filter(
+                          isToolUIPart,
+                        ) as ToolUIPart[];
+                        if (toolParts.length === 0) return null;
+
+                        const totalResponseSize = toolParts.reduce(
+                          (total, part) => {
+                            if (part.output) {
+                              const outputStr =
+                                typeof part.output === "string"
+                                  ? part.output
+                                  : JSON.stringify(part.output);
+                              return total + new Blob([outputStr]).size;
+                            }
+                            return total;
+                          },
+                          0,
+                        );
+
+                        const totalResponseTokens = toolParts.reduce(
+                          (total, part) => {
+                            if (part.output) {
+                              const outputStr =
+                                typeof part.output === "string"
+                                  ? part.output
+                                  : JSON.stringify(part.output);
+                              // Rough estimation: 1 token ≈ 4 characters for English text
+                              return total + Math.ceil(outputStr.length / 4);
+                            }
+                            return total;
+                          },
+                          0,
+                        );
+
+                        return (
+                          <div className="flex flex-col gap-2">
+                            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                              Tool Response Size
+                              <span className="text-xs text-muted-foreground font-normal">
+                                {toolParts.length} Tool
+                                {toolParts.length !== 1 ? "s" : ""}
+                              </span>
+                            </h4>
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between py-1 px-2 rounded-md bg-muted/30">
+                                <span className="text-xs text-muted-foreground">
+                                  Size
+                                </span>
+                                <span className="text-xs font-mono font-medium">
+                                  {(totalResponseSize / 1024).toFixed(2)} KB
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between py-1 px-2 rounded-md bg-muted/30">
+                                <span className="text-xs text-muted-foreground">
+                                  Estimated Tokens
+                                </span>
+                                <span className="text-xs font-mono font-medium">
+                                  {totalResponseTokens.toLocaleString()}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </>
                   )}
                 </div>

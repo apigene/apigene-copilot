@@ -529,7 +529,15 @@ export const ActionsTable = () => {
                             interaction.actions_result[0].response_content
                               .length,
                           )
-                        : "0 B"}
+                        : (interaction.actions_result[0]?.raw_data as any)
+                              ?.response?.body
+                          ? formatSize(
+                              JSON.stringify(
+                                (interaction.actions_result[0]?.raw_data as any)
+                                  ?.response?.body,
+                              ).length,
+                            )
+                          : "0 B"}
                     </span>
                   </TableCell>
                 </TableRow>
