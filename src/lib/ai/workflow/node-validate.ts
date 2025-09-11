@@ -133,12 +133,13 @@ export const outputNodeValidate: NodeValidate<OutputNodeData> = ({
   nodes,
   edges,
 }) => {
-  const names = node.outputData.map((data) => data.key);
+  const outputData = node.outputData || [];
+  const names = outputData.map((data) => data.key);
   const uniqueNames = [...new Set(names)];
   if (names.length !== uniqueNames.length) {
     throw new Error("Output data must have unique keys");
   }
-  node.outputData.forEach((data) => {
+  outputData.forEach((data) => {
     const variableName = cleanVariableName(data.key);
     if (variableName.length === 0) {
       throw new Error("Invalid Variable Name");

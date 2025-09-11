@@ -37,8 +37,9 @@ vi.mock("./node-executor", async (importOriginal) => {
       };
     }),
     outputNodeExecutor: vi.fn().mockImplementation(({ node, state }) => {
+      const outputData = node.outputData || [];
       return {
-        output: node.outputData.reduce((acc, cur) => {
+        output: outputData.reduce((acc, cur) => {
           if (cur.source) {
             acc[cur.key] = state.getOutput(cur.source);
           }

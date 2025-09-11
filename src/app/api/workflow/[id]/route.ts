@@ -1,11 +1,19 @@
 import { getSession } from "auth/server";
 import { workflowRepository } from "lib/db/repository";
+import { validateWorkflowId } from "lib/utils/uuid-validation";
 
 export async function GET(
   _: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+
+  // Validate UUID format
+  const validationError = validateWorkflowId(id);
+  if (validationError) {
+    return validationError;
+  }
+
   const session = await getSession();
   if (!session) {
     return new Response("Unauthorized", { status: 401 });
@@ -23,6 +31,13 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+
+  // Validate UUID format
+  const validationError = validateWorkflowId(id);
+  if (validationError) {
+    return validationError;
+  }
+
   const { visibility, isPublished } = await request.json();
 
   const session = await getSession();
@@ -60,6 +75,13 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+
+  // Validate UUID format
+  const validationError = validateWorkflowId(id);
+  if (validationError) {
+    return validationError;
+  }
+
   const session = await getSession();
   if (!session) {
     return new Response("Unauthorized", { status: 401 });

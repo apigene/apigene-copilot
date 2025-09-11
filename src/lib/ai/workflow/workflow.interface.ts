@@ -95,7 +95,7 @@ export type InputNodeData = BaseWorkflowNodeDataData<{
 export type OutputNodeData = BaseWorkflowNodeDataData<{
   kind: NodeKind.Output;
 }> & {
-  outputData: {
+  outputData?: {
     key: string; // Key name in final output
     source?: OutputSchemaSourceKey; // Reference to source node's output
   }[];

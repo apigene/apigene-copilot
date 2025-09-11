@@ -30,6 +30,10 @@ export const OutputNodeDataConfig = memo(function ({
   const t = useTranslations();
   const outputVariables = useMemo(() => {
     const nodes = getNodes() as UINode[];
+    // Add null check for outputData
+    if (!data.outputData || !Array.isArray(data.outputData)) {
+      return [];
+    }
     return data.outputData.map(({ key, source }) => {
       const targetNode = nodes.find((node) => node.data.id === source?.nodeId);
       const schema = targetNode
@@ -53,8 +57,10 @@ export const OutputNodeDataConfig = memo(function ({
     ) => {
       updateNodeData(data.id, (node) => {
         const prev = node.data as OutputNodeData;
+        // Ensure outputData exists and is an array
+        const currentOutputData = prev.outputData || [];
         return {
-          outputData: prev.outputData.map((v, i) =>
+          outputData: currentOutputData.map((v, i) =>
             i === index ? { ...v, ...item } : v,
           ),
         };
@@ -66,8 +72,10 @@ export const OutputNodeDataConfig = memo(function ({
     (index: number) => {
       updateNodeData(data.id, (node) => {
         const prev = node.data as OutputNodeData;
+        // Ensure outputData exists and is an array
+        const currentOutputData = prev.outputData || [];
         return {
-          outputData: prev.outputData.filter((_, i) => i !== index),
+          outputData: currentOutputData.filter((_, i) => i !== index),
         };
       });
     },
@@ -78,12 +86,17 @@ export const OutputNodeDataConfig = memo(function ({
     (key: string = "") => {
       updateNodeData(data.id, (node) => {
         const prev = node.data as OutputNodeData;
+        // Ensure outputData exists and is an array
+        const currentOutputData = prev.outputData || [];
         const newKey = generateUniqueKey(
           key,
-          prev.outputData.map((v) => v.key),
+          currentOutputData.map((v) => v.key),
         );
         return {
-          outputData: [...prev.outputData, { key: newKey, source: undefined }],
+          outputData: [
+            ...currentOutputData,
+            { key: newKey, source: undefined },
+          ],
         };
       });
     },
@@ -169,6 +182,10 @@ export const OutputNodeDataOutputStack = memo(function ({
   const { getNodes } = useReactFlow();
   const outputVariables = useMemo(() => {
     const nodes = getNodes() as UINode[];
+    // Add null check for outputData
+    if (!data.outputData || !Array.isArray(data.outputData)) {
+      return [];
+    }
     return data.outputData.map(({ key, source }) => {
       const targetNode = nodes.find((node) => node.data.id === source?.nodeId);
       const schema = targetNode
@@ -183,7 +200,7 @@ export const OutputNodeDataOutputStack = memo(function ({
         isNotFound: (source && !targetNode) || (targetNode && !schema),
       };
     });
-  }, [data.outputSchema]);
+  }, [data.outputSchema, data.outputData]);
 
   if (!outputVariables.length) return null;
   return (

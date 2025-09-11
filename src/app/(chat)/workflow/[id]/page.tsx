@@ -6,6 +6,7 @@ import Workflow from "@/components/workflow/workflow";
 import { getSession } from "auth/server";
 import { workflowRepository } from "lib/db/repository";
 import { notFound } from "next/navigation";
+import { isValidUUID } from "lib/utils/uuid-validation";
 
 export default async function WorkflowPage({
   params,
@@ -13,6 +14,12 @@ export default async function WorkflowPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+
+  // Validate UUID format before proceeding
+  if (!isValidUUID(id)) {
+    return notFound();
+  }
+
   const session = await getSession();
   if (!session) {
     return new Response("Unauthorized", { status: 401 });

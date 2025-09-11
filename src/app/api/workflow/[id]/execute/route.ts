@@ -5,12 +5,20 @@ import { encodeWorkflowEvent } from "lib/ai/workflow/shared.workflow";
 import logger from "logger";
 import { colorize } from "consola/utils";
 import { safeJSONParse, toAny } from "lib/utils";
+import { validateWorkflowId } from "lib/utils/uuid-validation";
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+
+  // Validate UUID format
+  const validationError = validateWorkflowId(id);
+  if (validationError) {
+    return validationError;
+  }
+
   const { query } = await request.json();
   const session = await getSession();
   if (!session) {

@@ -1,5 +1,6 @@
 import { ensureUserExists } from "auth/server";
 import { workflowRepository } from "lib/db/repository";
+import { validateWorkflowId } from "lib/utils/uuid-validation";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +9,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+
+  // Validate UUID format
+  const validationError = validateWorkflowId(id);
+  if (validationError) {
+    return validationError;
+  }
+
   const user = await ensureUserExists();
   if (!user) {
     return new Response("Unauthorized", { status: 401 });
@@ -26,6 +34,13 @@ export async function POST(
 ) {
   const { nodes, edges, deleteNodes, deleteEdges } = await request.json();
   const { id } = await params;
+
+  // Validate UUID format
+  const validationError = validateWorkflowId(id);
+  if (validationError) {
+    return validationError;
+  }
+
   const user = await ensureUserExists();
   if (!user) {
     return new Response("Unauthorized", { status: 401 });

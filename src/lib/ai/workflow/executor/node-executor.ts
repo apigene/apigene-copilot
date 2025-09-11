@@ -71,8 +71,9 @@ export const outputNodeExecutor: NodeExecutor<OutputNodeData> = ({
   node,
   state,
 }) => {
+  const outputData = node.outputData || [];
   return {
-    output: node.outputData.reduce((acc, cur) => {
+    output: outputData.reduce((acc, cur) => {
       // Collect data from each configured source node
       acc[cur.key] = state.getOutput(cur.source!);
       return acc;

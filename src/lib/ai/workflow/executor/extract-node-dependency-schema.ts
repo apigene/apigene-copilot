@@ -23,7 +23,8 @@ export function extractNodeDependencySchema({
     return target.outputSchema;
   }
   if (target.kind === NodeKind.Output) {
-    const properties = target.outputData.reduce(
+    const outputData = target.outputData || [];
+    const properties = outputData.reduce(
       (acc, cur) => {
         if (!cur.key) return acc;
         acc[cur.key] = {
