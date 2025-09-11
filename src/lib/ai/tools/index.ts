@@ -3,7 +3,7 @@ export enum AppDefaultToolkit {
   WebSearch = "webSearch",
   Http = "http",
   Code = "code",
-  WorkflowManagement = "workflowManagement",
+  WorkflowManagement = "workflowBuilder",
 }
 
 export enum DefaultToolName {
