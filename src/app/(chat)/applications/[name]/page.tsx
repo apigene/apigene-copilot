@@ -9,7 +9,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, AlertCircle, Circle } from "lucide-react";
+import {
+  ArrowLeft,
+  AlertCircle,
+  Circle,
+  Settings,
+  Shield,
+  Cog,
+  Database,
+  Layers,
+} from "lucide-react";
 import { GeneralTab } from "./components/general-tab";
 import { SecurityTab } from "./components/security-tab";
 import { MetadataTab } from "./components/metadata-tab";
@@ -184,16 +193,32 @@ export default function ApplicationEditPage() {
         className="w-full"
       >
         <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="general" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            General
+          </TabsTrigger>
           <TabsTrigger value="security" className="flex items-center gap-1">
+            <Shield className="h-4 w-4" />
             Security
             {!application?.security_info_configured && (
               <Circle className="h-2 w-2 fill-red-500 text-red-500" />
             )}
           </TabsTrigger>
-          <TabsTrigger value="operations">Operations</TabsTrigger>
-          <TabsTrigger value="metadata">Metadata</TabsTrigger>
-          <TabsTrigger value="common-parameters">Parameters</TabsTrigger>
+          <TabsTrigger value="operations" className="flex items-center gap-2">
+            <Cog className="h-4 w-4" />
+            Operations
+          </TabsTrigger>
+          <TabsTrigger value="metadata" className="flex items-center gap-2">
+            <Database className="h-4 w-4" />
+            Agentic Metadata
+          </TabsTrigger>
+          <TabsTrigger
+            value="common-parameters"
+            className="flex items-center gap-2"
+          >
+            <Layers className="h-4 w-4" />
+            Common Parameters
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="mt-6">

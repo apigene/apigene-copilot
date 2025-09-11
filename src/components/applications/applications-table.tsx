@@ -461,7 +461,11 @@ export function ApplicationsTable() {
               </TableRow>
             ) : (
               paginatedData.map((item, index) => (
-                <TableRow key={index}>
+                <TableRow
+                  key={index}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => router.push(`/applications/${item.api_name}`)}
+                >
                   {visibleColumnsArray.map((column) => (
                     <TableCell key={column.key} className={column.width}>
                       {column.key === "icon" && (
@@ -504,31 +508,33 @@ export function ApplicationsTable() {
                         </div>
                       )}
                       {column.key === "actions" && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                router.push(`/applications/${item.api_name}`)
-                              }
-                            >
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setApplicationToDelete(item);
-                                setShowDeleteDialog(true);
-                              }}
-                              className="text-red-600 focus:text-red-600"
-                            >
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  router.push(`/applications/${item.api_name}`)
+                                }
+                              >
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setApplicationToDelete(item);
+                                  setShowDeleteDialog(true);
+                                }}
+                                className="text-red-600 focus:text-red-600"
+                              >
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       )}
                     </TableCell>
                   ))}

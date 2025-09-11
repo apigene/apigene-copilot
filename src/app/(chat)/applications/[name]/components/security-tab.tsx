@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ApplicationData } from "@/types/applications";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,20 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  AlertCircle,
-  CheckCircle,
-  Loader2,
-  Shield,
-  X,
-  Lightbulb,
-  Edit3,
-  Save,
-  XCircle,
-} from "lucide-react";
+import { AlertCircle, CheckCircle, Loader2, Shield, X } from "lucide-react";
 import { toast } from "sonner";
-import { useApigeneApi } from "@/lib/api/apigene-client";
-import { Markdown } from "@/components/markdown";
 
 interface SecurityTabProps {
   application: ApplicationData;
@@ -42,7 +30,6 @@ interface SecurityInfo {
 }
 
 export function SecurityTab({ application, onUpdate }: SecurityTabProps) {
-  const apiClient = useApigeneApi();
   const [securityInfo, setSecurityInfo] = useState<SecurityInfo>(
     application.security_info || {},
   );
@@ -53,12 +40,6 @@ export function SecurityTab({ application, onUpdate }: SecurityTabProps) {
   >("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Security instructions state
-  const [showInstructions, setShowInstructions] = useState(false);
-  const [editInstructions, setEditInstructions] = useState(false);
-  const [instructionsLoading, setInstructionsLoading] = useState(false);
-  const [instructions, setInstructions] = useState("");
-
   // Set selected scheme when security info changes
   useEffect(() => {
     const schemes = Object.keys(securityInfo);
@@ -66,28 +47,6 @@ export function SecurityTab({ application, onUpdate }: SecurityTabProps) {
       setSelectedScheme(schemes.length > 0 ? schemes[0] : "");
     }
   }, [securityInfo, selectedScheme]);
-
-  // Fetch security instructions
-  useEffect(() => {
-    const fetchInstructions = async () => {
-      if (!application.api_name) return;
-
-      setInstructionsLoading(true);
-      try {
-        const response = await apiClient.specGetInstructions(
-          application.api_name,
-        );
-        setInstructions(response || "");
-      } catch (error) {
-        console.error("Error fetching security instructions:", error);
-        setInstructions("");
-      } finally {
-        setInstructionsLoading(false);
-      }
-    };
-
-    fetchInstructions();
-  }, [application.api_name, apiClient]);
 
   // Handle security scheme selection
   const handleSecuritySchemeChange = (scheme: string) => {
@@ -108,36 +67,6 @@ export function SecurityTab({ application, onUpdate }: SecurityTabProps) {
     setSecurityInfo(newSecurityInfo);
     setUpdateStatus("idle");
     setErrorMessage("");
-  };
-
-  // Security instructions handlers
-  const handleViewInstructions = () => {
-    setShowInstructions(!showInstructions);
-    setEditInstructions(false);
-  };
-
-  const handleEditInstructions = () => {
-    setEditInstructions(true);
-    setShowInstructions(false);
-  };
-
-  const handleSaveInstructions = async () => {
-    try {
-      await apiClient.specCreateInstructions({
-        api_name: application.api_name,
-        instructions: instructions,
-      });
-      setEditInstructions(false);
-      setShowInstructions(true);
-      toast.success("Security instructions updated successfully!");
-    } catch (error) {
-      console.error("Failed to update security instructions:", error);
-      toast.error("Failed to update security instructions");
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setEditInstructions(false);
   };
 
   // Handle form submission
@@ -361,113 +290,6 @@ export function SecurityTab({ application, onUpdate }: SecurityTabProps) {
           </Button>
         </div>
       )}
-
-      {/* Security Instructions */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Lightbulb className="h-5 w-5" />
-              Security Instructions
-            </CardTitle>
-            <div className="flex gap-2">
-              {instructions && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleViewInstructions}
-                  className="flex items-center gap-2"
-                >
-                  <Lightbulb className="h-4 w-4" />
-                  {showInstructions ? "Hide Instructions" : "View Instructions"}
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleEditInstructions}
-                className="flex items-center gap-2"
-              >
-                <Edit3 className="h-4 w-4" />
-                {instructions ? "Edit Instructions" : "Add Instructions"}
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-
-        {editInstructions && (
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="instructions">
-                Security Instructions (Markdown)
-              </Label>
-              <Textarea
-                id="instructions"
-                value={instructions}
-                onChange={(e) => setInstructions(e.target.value)}
-                placeholder="Enter security instructions in Markdown format..."
-                rows={8}
-                className="font-mono text-sm"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={handleSaveInstructions}
-                className="flex items-center gap-2"
-              >
-                <Save className="h-4 w-4" />
-                Save Instructions
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleCancelEdit}
-                className="flex items-center gap-2"
-              >
-                <XCircle className="h-4 w-4" />
-                Cancel
-              </Button>
-            </div>
-          </CardContent>
-        )}
-
-        {showInstructions && !editInstructions && (
-          <CardContent>
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowInstructions(false)}
-                className="absolute top-0 right-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-              <div className="prose prose-sm max-w-none dark:prose-invert">
-                {instructionsLoading ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Loading instructions...
-                  </div>
-                ) : instructions ? (
-                  <Markdown>{instructions}</Markdown>
-                ) : (
-                  <p className="text-muted-foreground text-sm">
-                    No security instructions available.
-                  </p>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        )}
-
-        {!showInstructions && !editInstructions && !instructions && (
-          <CardContent>
-            <p className="text-muted-foreground text-sm">
-              No security instructions have been added yet. Click &quot;Add
-              Instructions&quot; to create some.
-            </p>
-          </CardContent>
-        )}
-      </Card>
     </div>
   );
 }
