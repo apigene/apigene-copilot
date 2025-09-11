@@ -353,9 +353,9 @@ export function OperationsTab({ application, onUpdate }: OperationsTabProps) {
   };
 
   return (
-    <div className="w-full max-w-full overflow-hidden">
-      <Card>
-        <CardHeader>
+    <div className="w-full max-w-full overflow-hidden h-full flex flex-col">
+      <Card className="flex flex-col h-full">
+        <CardHeader className="sticky top-0 z-10 bg-background border-b">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             {/* Search */}
             <div className="relative w-full sm:w-auto sm:min-w-[300px]">
@@ -398,9 +398,9 @@ export function OperationsTab({ application, onUpdate }: OperationsTabProps) {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="flex flex-col flex-1 min-h-0 space-y-4">
           {/* Filters */}
-          <div className="space-y-4">
+          <div className="space-y-4 flex-shrink-0">
             {/* Filter Toggle for screens < 1024px */}
             <div className="block lg:hidden">
               <Button
@@ -605,8 +605,8 @@ export function OperationsTab({ application, onUpdate }: OperationsTabProps) {
           )}
 
           {/* Operations Display */}
-          <Card>
-            <CardContent className="p-0">
+          <Card className="flex flex-col flex-1 min-h-0">
+            <CardContent className="p-0 flex flex-col flex-1 min-h-0">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-6 w-6 animate-spin" />
@@ -615,139 +615,143 @@ export function OperationsTab({ application, onUpdate }: OperationsTabProps) {
               ) : (
                 <>
                   {/* Desktop Table View */}
-                  <div className="hidden lg:block border-b overflow-x-auto">
-                    <Table className="table-fixed w-full">
-                      <TableHeader>
-                        <TableRow className="hover:bg-transparent">
-                          <TableHead className="w-[5%] px-2 py-3">
-                            <Checkbox
-                              checked={allSelected}
-                              onCheckedChange={handleSelectAll}
-                            />
-                          </TableHead>
-                          <TableHead className="w-[10%] px-2 py-3">
-                            Type
-                          </TableHead>
-                          <TableHead className="w-[20%] px-2 py-3">
-                            Operation Name
-                          </TableHead>
-                          <TableHead className="w-[50%] px-2 py-3">
-                            Description
-                          </TableHead>
-                          <TableHead className="w-[20%] px-2 py-3">
-                            Tags
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {paginatedOperations.length === 0 ? (
-                          <TableRow>
-                            <TableCell
-                              colSpan={6}
-                              className="text-center text-muted-foreground py-12"
-                            >
-                              {loading
-                                ? "Loading operations..."
-                                : "No operations found matching your filters."}
-                            </TableCell>
+                  <div className="hidden lg:block border-b overflow-x-auto flex-1 min-h-0">
+                    <div className="h-full overflow-y-auto">
+                      <Table className="table-fixed w-full">
+                        <TableHeader>
+                          <TableRow className="hover:bg-transparent">
+                            <TableHead className="w-[5%] px-2 py-3">
+                              <Checkbox
+                                checked={allSelected}
+                                onCheckedChange={handleSelectAll}
+                              />
+                            </TableHead>
+                            <TableHead className="w-[10%] px-2 py-3">
+                              Type
+                            </TableHead>
+                            <TableHead className="w-[20%] px-2 py-3">
+                              Operation Name
+                            </TableHead>
+                            <TableHead className="w-[50%] px-2 py-3">
+                              Description
+                            </TableHead>
+                            <TableHead className="w-[20%] px-2 py-3">
+                              Tags
+                            </TableHead>
                           </TableRow>
-                        ) : (
-                          paginatedOperations.map((operation) => (
-                            <TableRow
-                              key={operation.id}
-                              className="hover:bg-muted/50"
-                            >
-                              <TableCell className="px-2 py-3">
-                                <Checkbox
-                                  checked={selectedOperations.has(operation.id)}
-                                  onCheckedChange={(checked) =>
-                                    handleOperationSelect(
-                                      operation.id,
-                                      checked as boolean,
-                                    )
-                                  }
-                                />
-                              </TableCell>
-                              <TableCell className="px-2 py-3">
-                                <Badge
-                                  className={`${getOperationTypeColor(
-                                    operation.operationType,
-                                  )} text-white text-xs font-medium px-2 py-1`}
-                                >
-                                  {operation.operationType.toUpperCase()}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="px-2 py-3 font-medium text-sm">
-                                {operation.apiPath}
-                              </TableCell>
-                              <TableCell className="px-2 py-3 text-sm text-muted-foreground">
-                                {operation.description ? (
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <div className="cursor-pointer">
-                                          {operation.description.length >
-                                          100 ? (
-                                            <div className="truncate">
-                                              {operation.description.substring(
-                                                0,
-                                                100,
-                                              )}
-                                              ...
-                                            </div>
-                                          ) : (
-                                            <div className="whitespace-pre-wrap">
-                                              {operation.description}
-                                            </div>
-                                          )}
-                                        </div>
-                                      </TooltipTrigger>
-                                      <TooltipContent
-                                        side="top"
-                                        className="max-w-md p-3 bg-slate-900 text-slate-100 border-slate-700"
-                                      >
-                                        <div className="whitespace-pre-wrap text-sm">
-                                          {operation.description}
-                                        </div>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                ) : (
-                                  <span className="text-sm text-muted-foreground italic">
-                                    No description available
-                                  </span>
-                                )}
-                              </TableCell>
-                              <TableCell className="px-2 py-3">
-                                <div className="flex flex-wrap gap-1">
-                                  {operation.tags.slice(0, 3).map((tag) => (
-                                    <Badge
-                                      key={tag}
-                                      variant="secondary"
-                                      className="text-xs px-2 py-1 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                                    >
-                                      {tag}
-                                    </Badge>
-                                  ))}
-                                  {operation.tags.length > 3 && (
-                                    <Badge
-                                      variant="secondary"
-                                      className="text-xs px-2 py-1 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                                    >
-                                      +{operation.tags.length - 3}
-                                    </Badge>
-                                  )}
-                                </div>
+                        </TableHeader>
+                        <TableBody>
+                          {paginatedOperations.length === 0 ? (
+                            <TableRow>
+                              <TableCell
+                                colSpan={6}
+                                className="text-center text-muted-foreground py-12"
+                              >
+                                {loading
+                                  ? "Loading operations..."
+                                  : "No operations found matching your filters."}
                               </TableCell>
                             </TableRow>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
+                          ) : (
+                            paginatedOperations.map((operation) => (
+                              <TableRow
+                                key={operation.id}
+                                className="hover:bg-muted/50"
+                              >
+                                <TableCell className="px-2 py-3">
+                                  <Checkbox
+                                    checked={selectedOperations.has(
+                                      operation.id,
+                                    )}
+                                    onCheckedChange={(checked) =>
+                                      handleOperationSelect(
+                                        operation.id,
+                                        checked as boolean,
+                                      )
+                                    }
+                                  />
+                                </TableCell>
+                                <TableCell className="px-2 py-3">
+                                  <Badge
+                                    className={`${getOperationTypeColor(
+                                      operation.operationType,
+                                    )} text-white text-xs font-medium px-2 py-1`}
+                                  >
+                                    {operation.operationType.toUpperCase()}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="px-2 py-3 font-medium text-sm">
+                                  {operation.apiPath}
+                                </TableCell>
+                                <TableCell className="px-2 py-3 text-sm text-muted-foreground">
+                                  {operation.description ? (
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div className="cursor-pointer">
+                                            {operation.description.length >
+                                            100 ? (
+                                              <div className="truncate">
+                                                {operation.description.substring(
+                                                  0,
+                                                  100,
+                                                )}
+                                                ...
+                                              </div>
+                                            ) : (
+                                              <div className="whitespace-pre-wrap">
+                                                {operation.description}
+                                              </div>
+                                            )}
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent
+                                          side="top"
+                                          className="max-w-md p-3 bg-slate-900 text-slate-100 border-slate-700"
+                                        >
+                                          <div className="whitespace-pre-wrap text-sm">
+                                            {operation.description}
+                                          </div>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  ) : (
+                                    <span className="text-sm text-muted-foreground italic">
+                                      No description available
+                                    </span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="px-2 py-3">
+                                  <div className="flex flex-wrap gap-1">
+                                    {operation.tags.slice(0, 3).map((tag) => (
+                                      <Badge
+                                        key={tag}
+                                        variant="secondary"
+                                        className="text-xs px-2 py-1 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                                      >
+                                        {tag}
+                                      </Badge>
+                                    ))}
+                                    {operation.tags.length > 3 && (
+                                      <Badge
+                                        variant="secondary"
+                                        className="text-xs px-2 py-1 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                                      >
+                                        +{operation.tags.length - 3}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </div>
 
                   {/* Mobile/Tablet Card View */}
-                  <div className="block lg:hidden p-4">
+                  <div className="block lg:hidden p-4 flex-1 min-h-0 overflow-y-auto">
                     {paginatedOperations.length === 0 ? (
                       <div className="text-center text-muted-foreground py-8">
                         {loading
@@ -847,7 +851,7 @@ export function OperationsTab({ application, onUpdate }: OperationsTabProps) {
 
                   {/* Pagination */}
                   {filteredOperations.length > 0 && (
-                    <div className="border-t">
+                    <div className="border-t sticky bottom-0 bg-background z-10 flex-shrink-0">
                       {/* Mobile/Tablet Pagination */}
                       <div className="block lg:hidden p-4 space-y-4">
                         <div className="text-center text-sm text-muted-foreground">
@@ -999,14 +1003,6 @@ export function OperationsTab({ application, onUpdate }: OperationsTabProps) {
               )}
             </CardContent>
           </Card>
-
-          {/* Summary */}
-          {!loading && filteredOperations.length > 0 && (
-            <div className="text-sm text-muted-foreground">
-              {selectedOperations.size} of {operations.length} operations
-              selected.
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>

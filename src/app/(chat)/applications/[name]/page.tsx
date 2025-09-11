@@ -158,9 +158,9 @@ export default function ApplicationEditPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto p-6 h-screen flex flex-col">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-6 flex-shrink-0">
         <Button
           variant="ghost"
           onClick={() => router.push("/applications")}
@@ -190,9 +190,9 @@ export default function ApplicationEditPage() {
       <Tabs
         value={activeTab}
         onValueChange={handleTabChange}
-        className="w-full"
+        className="w-full flex flex-col flex-1 min-h-0"
       >
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-5 flex-shrink-0">
           <TabsTrigger value="general" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             General
@@ -221,35 +221,35 @@ export default function ApplicationEditPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="general" className="mt-6">
+        <TabsContent value="general" className="mt-6 flex-1 min-h-0">
           <GeneralTab
             application={application}
             onUpdate={handleApplicationUpdate}
           />
         </TabsContent>
 
-        <TabsContent value="security" className="mt-6">
+        <TabsContent value="security" className="mt-6 flex-1 min-h-0">
           <SecurityTab
             application={application}
             onUpdate={handleApplicationUpdate}
           />
         </TabsContent>
 
-        <TabsContent value="operations" className="mt-6">
+        <TabsContent value="operations" className="mt-6 flex-1 min-h-0">
           <OperationsTab
             application={application}
             onUpdate={handleApplicationUpdate}
           />
         </TabsContent>
 
-        <TabsContent value="metadata" className="mt-6">
+        <TabsContent value="metadata" className="mt-6 flex-1 min-h-0">
           <MetadataTab
             application={application}
             onUpdate={handleApplicationUpdate}
           />
         </TabsContent>
 
-        <TabsContent value="common-parameters" className="mt-6">
+        <TabsContent value="common-parameters" className="mt-6 flex-1 min-h-0">
           <CommonParametersTab
             application={application}
             onUpdate={handleApplicationUpdate}
