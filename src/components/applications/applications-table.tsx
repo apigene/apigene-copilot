@@ -42,7 +42,6 @@ import {
   Trash2,
   Loader2,
   Plus,
-  Download,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
@@ -390,7 +389,7 @@ export function ApplicationsTable() {
               onClick={handleInstallNewApp}
               className="flex items-center gap-2"
             >
-              <Download className="h-4 w-4" />
+              <Plus className="h-4 w-4" />
               Install New Application
             </Button>
             <div className="relative">

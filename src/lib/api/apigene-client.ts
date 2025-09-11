@@ -445,6 +445,13 @@ export function useApigeneApi() {
     [client],
   );
 
+  const specCreateAgenticMetadata = useCallback(
+    async (name: string) => {
+      return client.post(`/api/spec/${name}/create_agentic_metadata`);
+    },
+    [client],
+  );
+
   const specUpdateAgenticMetadata = useCallback(
     async (name: string, data: any) => {
       return client.post(`/api/spec/${name}/update_agentic_metadata`, data);
@@ -460,7 +467,11 @@ export function useApigeneApi() {
   );
 
   const specCreateFromUrl = useCallback(
-    async (data: { url: string; global_spec?: boolean }) => {
+    async (data: {
+      url: string;
+      global_spec?: boolean;
+      shared_security_info?: boolean;
+    }) => {
       return client.post("/api/spec_from_url/", data, {
         headers: {
           "Content-Type": "application/json",
@@ -471,7 +482,11 @@ export function useApigeneApi() {
   );
 
   const specCreateFromFile = useCallback(
-    async (data: { file: File; global_spec?: boolean }) => {
+    async (data: {
+      file: File;
+      global_spec?: boolean;
+      shared_security_info?: boolean;
+    }) => {
       const formData = customFormData(data);
 
       const response = await client.request({
@@ -507,6 +522,7 @@ export function useApigeneApi() {
       specCreateInstructions,
       // Spec agentic metadata methods
       specGetAgenticMetadata,
+      specCreateAgenticMetadata,
       specUpdateAgenticMetadata,
       // Spec operations methods
       specGetOperations,

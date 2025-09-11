@@ -26,8 +26,6 @@ import {
   Loader2,
 } from "lucide-react";
 import { useApigeneApi } from "@/lib/api/apigene-client";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 
 interface InstallApplicationDialogProps {
   open: boolean;
@@ -40,7 +38,6 @@ const InstallApplicationDialog: React.FC<InstallApplicationDialogProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const _router = useRouter();
   const [activeTab, setActiveTab] = useState("url");
   const [url, setUrl] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -108,7 +105,7 @@ const InstallApplicationDialog: React.FC<InstallApplicationDialogProps> = ({
         }
 
         setInstallStep(1);
-        result = await apiClient.post("/api/specs/from-url", {
+        result = await apiClient.specCreateFromUrl({
           url: url.trim(),
           global_spec: false,
           shared_security_info: false,
@@ -120,15 +117,11 @@ const InstallApplicationDialog: React.FC<InstallApplicationDialogProps> = ({
         }
 
         setInstallStep(1);
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("global_spec", "false");
-        formData.append("shared_security_info", "false");
 
-        result = await apiClient.post("/api/specs/from-file", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+        result = await apiClient.specCreateFromFile({
+          file,
+          global_spec: false,
+          shared_security_info: false,
         });
       }
 
@@ -141,7 +134,7 @@ const InstallApplicationDialog: React.FC<InstallApplicationDialogProps> = ({
 
       // Create agentic metadata
       setInstallStep(2);
-      await apiClient.post(`/api/specs/${apiName}/agentic-metadata`, []);
+      await apiClient.specCreateAgenticMetadata(apiName);
 
       setInstallStep(3);
 
