@@ -173,7 +173,6 @@ export default function ApplicationEditPage() {
             <h1 className="text-2xl font-bold">
               {application.api_title || application.api_name}
             </h1>
-            <p className="text-muted-foreground">Edit application settings</p>
           </div>
         </div>
       </div>

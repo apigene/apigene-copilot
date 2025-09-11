@@ -1,8 +1,8 @@
 export interface LlmSummary {
   summary: string;
   keywords: string[];
-  domain: string;
-  product_name: string;
+  domain?: string;
+  product_name?: string;
 }
 
 export interface ApplicationData {

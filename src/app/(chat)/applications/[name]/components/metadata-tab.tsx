@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { ApplicationData } from "@/types/applications";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -238,21 +238,7 @@ export function MetadataTab({ application }: MetadataTabProps) {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5" />
-              Agentic Metadata
-            </CardTitle>
-            <Badge variant="outline">{metadata.length} operations</Badge>
-          </div>
-        </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground mb-4">
-            Manage and edit agentic metadata for API operations. This metadata
-            helps AI understand how to use your API effectively.
-          </p>
-
           <div className="flex items-center gap-4 mb-6">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />

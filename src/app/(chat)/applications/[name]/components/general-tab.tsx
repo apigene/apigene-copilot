@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ApplicationData } from "@/types/applications";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,8 +20,6 @@ export function GeneralTab({ application, onUpdate }: GeneralTabProps) {
   const [formData, setFormData] = useState({
     server_url: application.server_url || "",
     domain_url: application.domain_url || "",
-    domain: application.llm_summary?.domain || "",
-    product_name: application.llm_summary?.product_name || "",
     summary: application.llm_summary?.summary || "",
   });
 
@@ -81,8 +79,8 @@ export function GeneralTab({ application, onUpdate }: GeneralTabProps) {
         llm_summary: {
           summary: formData.summary,
           keywords: application.llm_summary?.keywords || [],
-          domain: formData.domain,
-          product_name: formData.product_name,
+          domain: application.llm_summary?.domain || "",
+          product_name: application.llm_summary?.product_name || "",
         },
       };
 
@@ -111,9 +109,6 @@ export function GeneralTab({ application, onUpdate }: GeneralTabProps) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>General Settings</CardTitle>
-      </CardHeader>
       <CardContent className="space-y-6">
         {/* Server URL */}
         <div className="space-y-2">
@@ -135,7 +130,7 @@ export function GeneralTab({ application, onUpdate }: GeneralTabProps) {
         </div>
 
         {/* Basic Information Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* API Name */}
           <div className="space-y-2">
             <Label htmlFor="api_name">API Name</Label>
@@ -160,17 +155,6 @@ export function GeneralTab({ application, onUpdate }: GeneralTabProps) {
             <p className="text-xs text-muted-foreground">Read-only field</p>
           </div>
 
-          {/* Domain */}
-          <div className="space-y-2">
-            <Label htmlFor="domain">Domain</Label>
-            <Input
-              id="domain"
-              value={formData.domain}
-              onChange={(e) => handleFieldChange("domain", e.target.value)}
-              placeholder="e.g., SEO tools, Finance"
-            />
-          </div>
-
           {/* Domain URL */}
           <div className="space-y-2">
             <Label htmlFor="domain_url">Domain URL</Label>
@@ -188,17 +172,6 @@ export function GeneralTab({ application, onUpdate }: GeneralTabProps) {
               </p>
             )}
           </div>
-        </div>
-
-        {/* Product Name */}
-        <div className="space-y-2">
-          <Label htmlFor="product_name">Product Name</Label>
-          <Input
-            id="product_name"
-            value={formData.product_name}
-            onChange={(e) => handleFieldChange("product_name", e.target.value)}
-            placeholder="e.g., Site Explorer, Payment API"
-          />
         </div>
 
         {/* Summary */}

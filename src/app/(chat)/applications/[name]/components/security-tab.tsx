@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -176,39 +175,13 @@ export function SecurityTab({ application, onUpdate }: SecurityTabProps) {
     }
   };
 
-  const isConfigured = application.security_info_configured;
   const schemes = Object.keys(securityInfo);
 
   return (
     <div className="space-y-6">
-      {/* Security Status */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Security Configuration
-            </CardTitle>
-            <Badge variant={isConfigured ? "default" : "destructive"}>
-              {isConfigured ? "Configured" : "Not Configured"}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            {isConfigured
-              ? "View and edit the current security configuration for your API."
-              : "No security configuration found for this API."}
-          </p>
-        </CardContent>
-      </Card>
-
       {/* Security Configuration Form */}
       {schemes.length > 0 && (
         <Card>
-          <CardHeader>
-            <CardTitle>Security Scheme Configuration</CardTitle>
-          </CardHeader>
           <CardContent className="space-y-6">
             {/* Security Scheme Selector */}
             <div className="space-y-2">

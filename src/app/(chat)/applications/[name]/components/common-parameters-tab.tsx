@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { ApplicationData } from "@/types/applications";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -201,7 +201,16 @@ export function CommonParametersTab({
     <Card>
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <CardTitle>Common Parameters</CardTitle>
+          {/* Search */}
+          <div className="relative w-full sm:w-auto sm:min-w-[300px]">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Search parameters..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <Button
               onClick={addParameter}
@@ -234,17 +243,6 @@ export function CommonParametersTab({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search parameters..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-
         {/* Status Messages */}
         {updateStatus === "error" && errorMessage && (
           <Alert variant="destructive">
