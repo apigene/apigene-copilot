@@ -486,7 +486,7 @@ export function ApplicationsTable() {
 
       {/* Scrollable Table Container */}
       <div className="flex-1 overflow-hidden">
-        <div className="h-full flex flex-col">
+        <div className="h-screen flex flex-col">
           {/* Sticky Table Header */}
           <div className="sticky top-0 z-10 bg-background border-b">
             <div className="rounded-md border border-t-0">

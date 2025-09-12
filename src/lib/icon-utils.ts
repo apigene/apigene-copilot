@@ -15,5 +15,5 @@ export const getIconUrl = (iconUrl?: string): string => {
 
   // Use Brandfetch CDN for the provided icon URL
   const brandfetchClientId = process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID;
-  return `https://cdn.brandfetch.io/${encodeURIComponent(iconUrl)}?c=${brandfetchClientId}`;
+  return `https://cdn.brandfetch.io/${encodeURIComponent(iconUrl)}/w/20/h/20?c=${brandfetchClientId}`;
 };

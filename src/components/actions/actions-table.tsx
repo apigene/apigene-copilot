@@ -40,6 +40,8 @@ import {
   Info,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useApigeneApi } from "@/lib/api/apigene-client";
 import { cn } from "@/lib/utils";
@@ -223,16 +225,15 @@ export const ActionsTable = () => {
     rawResponseData: true,
   });
   const [filters, setFilters] = useState({
-    statusCode: "",
-    duration: "",
+    statusCode: "all",
+    duration: "all",
     fromDate: "",
     toDate: "",
   });
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [pagination] = useState({
-    page: 1,
-    limit: 20,
-  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [totalCount, setTotalCount] = useState(0);
 
   const { interactionList } = useApigeneApi();
 
@@ -241,7 +242,7 @@ export const ActionsTable = () => {
     try {
       const backendFilters: Record<string, any> = {};
 
-      if (filters.statusCode) {
+      if (filters.statusCode && filters.statusCode !== "all") {
         if (filters.statusCode === "2xx") {
           backendFilters.min_status_code = 200;
           backendFilters.max_status_code = 299;
@@ -254,7 +255,7 @@ export const ActionsTable = () => {
         }
       }
 
-      if (filters.duration) {
+      if (filters.duration && filters.duration !== "all") {
         if (filters.duration === "fast") {
           backendFilters.max_duration = 1;
         } else if (filters.duration === "medium") {
@@ -272,18 +273,24 @@ export const ActionsTable = () => {
         backendFilters.end_date = new Date(filters.toDate).toISOString();
       }
 
-      const params = {
-        page: pagination.page,
-        limit: pagination.limit,
-        sort_by: "created_at",
-        sort_order: "desc",
+      const requestBody = {
         ...(Object.keys(backendFilters).length > 0 && {
           filters: backendFilters,
         }),
       };
 
-      const response = await interactionList(backendFilters, params);
-      setInteractions(response.interactions);
+      const params = {
+        page: currentPage,
+        limit: pageSize,
+        sort_by: "created_at",
+        sort_order: "desc",
+      };
+
+      const response = await interactionList(requestBody, {
+        queryParams: params,
+      });
+      setInteractions(response.interactions || []);
+      setTotalCount(response.count || 0);
     } catch (error) {
       console.error("Error fetching interactions:", error);
     } finally {
@@ -293,7 +300,7 @@ export const ActionsTable = () => {
 
   useEffect(() => {
     fetchInteractions();
-  }, [pagination, filters]);
+  }, [currentPage, pageSize, filters]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -319,18 +326,23 @@ export const ActionsTable = () => {
     );
   }, [interactions, searchTerm]);
 
+  // Pagination calculations
+  const totalPages = Math.ceil(totalCount / pageSize);
+
   const handleSearch = () => {
+    setCurrentPage(1);
     fetchInteractions();
   };
 
   const handleClearFilters = () => {
     setFilters({
-      statusCode: "",
-      duration: "",
+      statusCode: "all",
+      duration: "all",
       fromDate: "",
       toDate: "",
     });
     setSearchTerm("");
+    setCurrentPage(1);
     fetchInteractions();
   };
 
@@ -357,7 +369,10 @@ export const ActionsTable = () => {
               <Input
                 placeholder="Search by application name, user input, or user ID..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
                 onKeyPress={(e) => {
                   if (e.key === "Enter") {
                     handleSearch();
@@ -405,7 +420,7 @@ export const ActionsTable = () => {
                     <SelectValue placeholder="Status Code" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Status Codes</SelectItem>
+                    <SelectItem value="all">All Status Codes</SelectItem>
                     <SelectItem value="2xx">2xx Success</SelectItem>
                     <SelectItem value="4xx">4xx Client Error</SelectItem>
                     <SelectItem value="5xx">5xx Server Error</SelectItem>
@@ -422,7 +437,7 @@ export const ActionsTable = () => {
                     <SelectValue placeholder="Duration" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Durations</SelectItem>
+                    <SelectItem value="all">All Durations</SelectItem>
                     <SelectItem value="fast">Fast (&lt; 1s)</SelectItem>
                     <SelectItem value="medium">Medium (1-5s)</SelectItem>
                     <SelectItem value="slow">Slow (&gt; 5s)</SelectItem>
@@ -546,6 +561,73 @@ export const ActionsTable = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="sticky bottom-0 z-10 bg-background border-t">
+          <div className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="text-sm text-muted-foreground">
+                  Showing {(currentPage - 1) * pageSize + 1} to{" "}
+                  {Math.min(currentPage * pageSize, totalCount)} of {totalCount}{" "}
+                  actions
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    Rows per page:
+                  </span>
+                  <Select
+                    value={pageSize.toString()}
+                    onValueChange={(value) => {
+                      setPageSize(Number(value));
+                      setCurrentPage(1);
+                    }}
+                    disabled={loading}
+                  >
+                    <SelectTrigger className="w-20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                      <SelectItem value="100">100</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(1, prev - 1))
+                  }
+                  disabled={currentPage === 1 || loading}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <span className="text-sm px-2">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                  }
+                  disabled={currentPage === totalPages || loading}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Action Details Modal */}
       {selectedInteraction && (
