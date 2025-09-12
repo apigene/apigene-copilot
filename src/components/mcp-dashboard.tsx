@@ -221,6 +221,12 @@ export default function MCPDashboard({ message }: { message?: string }) {
                 </DropdownMenu>
               ) : null}
 
+              <Link href="/mcp/registry">
+                <Button className="font-semibold" variant="outline">
+                  <MCPIcon className="fill-foreground size-3.5 mr-2" />
+                  MCP Registry
+                </Button>
+              </Link>
               <Link href="/mcp/create">
                 <Button className="font-semibold" variant="outline">
                   <MCPIcon className="fill-foreground size-3.5" />
