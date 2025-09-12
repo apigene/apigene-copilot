@@ -335,217 +335,237 @@ export const ActionsTable = () => {
   };
 
   if (interactions.length === 0 && !loading) {
-    return <ActionsEmptyState />;
+    return (
+      <div className="h-[calc(100vh-3rem)] p-6">
+        <ActionsEmptyState />
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="bg-card border border-border rounded-lg p-6">
-        <h1 className="text-2xl font-bold text-foreground mb-2">Actions</h1>
-        <p className="text-muted-foreground">
-          Monitor and analyze API interactions and their performance
-        </p>
+    <div className="flex flex-col h-[calc(100vh-3rem)] p-6">
+      {/* Sticky Header Section */}
+      <div className="sticky top-0 z-10 bg-background space-y-6 pb-6">
+        {/* Page Header */}
+        <div className="bg-card border border-border rounded-lg p-6">
+          <h1 className="text-2xl font-bold text-foreground mb-2">Actions</h1>
+          <p className="text-muted-foreground">
+            Monitor and analyze API interactions and their performance
+          </p>
+        </div>
+
+        {/* Search and Filters */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder="Search by application name, user input, or user ID..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      handleSearch();
+                    }
+                  }}
+                  className="pl-10"
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchInteractions}
+                disabled={loading}
+              >
+                <RefreshCw
+                  className={cn("w-4 h-4 mr-2", loading && "animate-spin")}
+                />
+                Refresh
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              >
+                <Filter className="w-4 h-4 mr-2" />
+                Filters
+              </Button>
+              <Button variant="outline" size="sm">
+                <Download className="w-4 h-4 mr-2" />
+                Export
+              </Button>
+            </div>
+
+            {/* Advanced Filters */}
+            {showAdvancedFilters && (
+              <div className="border-t pt-4 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Select
+                    value={filters.statusCode}
+                    onValueChange={(value) =>
+                      setFilters((prev) => ({ ...prev, statusCode: value }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Status Code" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Status Codes</SelectItem>
+                      <SelectItem value="2xx">2xx Success</SelectItem>
+                      <SelectItem value="4xx">4xx Client Error</SelectItem>
+                      <SelectItem value="5xx">5xx Server Error</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select
+                    value={filters.duration}
+                    onValueChange={(value) =>
+                      setFilters((prev) => ({ ...prev, duration: value }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Duration" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Durations</SelectItem>
+                      <SelectItem value="fast">Fast (&lt; 1s)</SelectItem>
+                      <SelectItem value="medium">Medium (1-5s)</SelectItem>
+                      <SelectItem value="slow">Slow (&gt; 5s)</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Input
+                    type="date"
+                    placeholder="From Date"
+                    value={filters.fromDate}
+                    onChange={(e) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        fromDate: e.target.value,
+                      }))
+                    }
+                  />
+
+                  <Input
+                    type="date"
+                    placeholder="To Date"
+                    value={filters.toDate}
+                    onChange={(e) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        toDate: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleClearFilters}
+                  >
+                    Clear
+                  </Button>
+                  <Button size="sm" onClick={handleSearch}>
+                    Apply
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Search and Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Search by application name, user input, or user ID..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === "Enter") {
-                    handleSearch();
-                  }
-                }}
-                className="pl-10"
-              />
+      {/* Scrollable Table Section */}
+      <div className="flex-1 overflow-hidden">
+        <Card className="h-full">
+          <CardContent className="p-0 h-full">
+            <div className="h-full overflow-auto">
+              <Table>
+                <TableHeader className="sticky top-0 bg-background z-10">
+                  <TableRow>
+                    <TableHead className="text-center">User ID</TableHead>
+                    <TableHead className="text-center">Application</TableHead>
+                    <TableHead className="text-center">User Input</TableHead>
+                    <TableHead className="text-center">Created At</TableHead>
+                    <TableHead className="text-center">Duration</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="text-center">Response Size</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredInteractions.map((interaction, index) => (
+                    <TableRow
+                      key={index}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => setSelectedInteraction(interaction)}
+                    >
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <User className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm">{interaction.user_id}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <AppWindow className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm">
+                            {interaction.api_name}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center max-w-xs">
+                        <span className="text-sm text-foreground truncate block">
+                          {interaction.user_input}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="text-sm">
+                          {formatDate(interaction.created_at)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="text-sm">{interaction.duration}s</span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <StatusIndicator
+                          statusCode={
+                            interaction.actions_result[0]?.status_code
+                          }
+                        />
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="text-sm">
+                          {interaction.actions_result[0]?.response_content &&
+                          typeof interaction.actions_result[0]
+                            .response_content === "string"
+                            ? formatSize(
+                                interaction.actions_result[0].response_content
+                                  .length,
+                              )
+                            : (interaction.actions_result[0]?.raw_data as any)
+                                  ?.response?.body
+                              ? formatSize(
+                                  JSON.stringify(
+                                    (
+                                      interaction.actions_result[0]
+                                        ?.raw_data as any
+                                    )?.response?.body,
+                                  ).length,
+                                )
+                              : "0 B"}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchInteractions}
-              disabled={loading}
-            >
-              <RefreshCw
-                className={cn("w-4 h-4 mr-2", loading && "animate-spin")}
-              />
-              Refresh
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            >
-              <Filter className="w-4 h-4 mr-2" />
-              Filters
-            </Button>
-            <Button variant="outline" size="sm">
-              <Download className="w-4 h-4 mr-2" />
-              Export
-            </Button>
-          </div>
-
-          {/* Advanced Filters */}
-          {showAdvancedFilters && (
-            <div className="border-t pt-4 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Select
-                  value={filters.statusCode}
-                  onValueChange={(value) =>
-                    setFilters((prev) => ({ ...prev, statusCode: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Status Code" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All Status Codes</SelectItem>
-                    <SelectItem value="2xx">2xx Success</SelectItem>
-                    <SelectItem value="4xx">4xx Client Error</SelectItem>
-                    <SelectItem value="5xx">5xx Server Error</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select
-                  value={filters.duration}
-                  onValueChange={(value) =>
-                    setFilters((prev) => ({ ...prev, duration: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Duration" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All Durations</SelectItem>
-                    <SelectItem value="fast">Fast (&lt; 1s)</SelectItem>
-                    <SelectItem value="medium">Medium (1-5s)</SelectItem>
-                    <SelectItem value="slow">Slow (&gt; 5s)</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Input
-                  type="date"
-                  placeholder="From Date"
-                  value={filters.fromDate}
-                  onChange={(e) =>
-                    setFilters((prev) => ({
-                      ...prev,
-                      fromDate: e.target.value,
-                    }))
-                  }
-                />
-
-                <Input
-                  type="date"
-                  placeholder="To Date"
-                  value={filters.toDate}
-                  onChange={(e) =>
-                    setFilters((prev) => ({ ...prev, toDate: e.target.value }))
-                  }
-                />
-              </div>
-
-              <div className="flex gap-2 justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleClearFilters}
-                >
-                  Clear
-                </Button>
-                <Button size="sm" onClick={handleSearch}>
-                  Apply
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Actions Table */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="text-center">User ID</TableHead>
-                <TableHead className="text-center">Application</TableHead>
-                <TableHead className="text-center">User Input</TableHead>
-                <TableHead className="text-center">Created At</TableHead>
-                <TableHead className="text-center">Duration</TableHead>
-                <TableHead className="text-center">Status</TableHead>
-                <TableHead className="text-center">Response Size</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredInteractions.map((interaction, index) => (
-                <TableRow
-                  key={index}
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => setSelectedInteraction(interaction)}
-                >
-                  <TableCell className="text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <User className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm">{interaction.user_id}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <AppWindow className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm">{interaction.api_name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center max-w-xs">
-                    <span className="text-sm text-foreground truncate block">
-                      {interaction.user_input}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <span className="text-sm">
-                      {formatDate(interaction.created_at)}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <span className="text-sm">{interaction.duration}s</span>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <StatusIndicator
-                      statusCode={interaction.actions_result[0]?.status_code}
-                    />
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <span className="text-sm">
-                      {interaction.actions_result[0]?.response_content &&
-                      typeof interaction.actions_result[0].response_content ===
-                        "string"
-                        ? formatSize(
-                            interaction.actions_result[0].response_content
-                              .length,
-                          )
-                        : (interaction.actions_result[0]?.raw_data as any)
-                              ?.response?.body
-                          ? formatSize(
-                              JSON.stringify(
-                                (interaction.actions_result[0]?.raw_data as any)
-                                  ?.response?.body,
-                              ).length,
-                            )
-                          : "0 B"}
-                    </span>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Action Details Modal */}
       {selectedInteraction && (
