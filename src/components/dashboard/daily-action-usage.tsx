@@ -8,6 +8,8 @@ import {
   Bar,
   BarChart as RechartsBarChart,
   CartesianGrid,
+  Line,
+  LineChart as RechartsLineChart,
   XAxis,
   YAxis,
   ResponsiveContainer,
@@ -198,39 +200,72 @@ export const DailyActionUsage = ({ isLoading, type, interactions }: Props) => {
       <CardContent>
         <ChartContainer config={chartConfig}>
           <ResponsiveContainer width="100%" height={400}>
-            <RechartsBarChart data={chartData}>
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="date"
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-                angle={-45}
-                textAnchor="end"
-                height={80}
-              />
-              <YAxis
-                tickLine={false}
-                axisLine={false}
-                tickMargin={10}
-                label={{
-                  value: "Number of Interactions",
-                  angle: -90,
-                  position: "insideLeft",
-                }}
-              />
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent indicator="dashed" />}
-              />
-              {type === "total" ? (
-                <Bar
-                  dataKey="total"
-                  fill={`var(--color-total)`}
-                  radius={[4, 4, 0, 0]}
+            {type === "total" ? (
+              <RechartsLineChart data={chartData}>
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
                 />
-              ) : (
-                allAPIs.map((api, index) => (
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={10}
+                  label={{
+                    value: "Number of Interactions",
+                    angle: -90,
+                    position: "insideLeft",
+                  }}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent indicator="line" />}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="total"
+                  stroke={`var(--color-total)`}
+                  strokeWidth={2}
+                  dot={{ fill: `var(--color-total)`, strokeWidth: 2, r: 4 }}
+                  activeDot={{
+                    r: 6,
+                    stroke: `var(--color-total)`,
+                    strokeWidth: 2,
+                  }}
+                />
+              </RechartsLineChart>
+            ) : (
+              <RechartsBarChart data={chartData}>
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={10}
+                  label={{
+                    value: "Number of Interactions",
+                    angle: -90,
+                    position: "insideLeft",
+                  }}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent indicator="dashed" />}
+                />
+                {allAPIs.map((api, index) => (
                   <Bar
                     key={api}
                     dataKey={api}
@@ -238,9 +273,9 @@ export const DailyActionUsage = ({ isLoading, type, interactions }: Props) => {
                     fill={`var(--color-${api})`}
                     radius={index === allAPIs.length - 1 ? [4, 4, 0, 0] : 0}
                   />
-                ))
-              )}
-            </RechartsBarChart>
+                ))}
+              </RechartsBarChart>
+            )}
           </ResponsiveContainer>
         </ChartContainer>
       </CardContent>

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Label, Pie, PieChart as RechartsPieChart } from "recharts";
+import { Cell, Label, Pie, PieChart as RechartsPieChart } from "recharts";
 
 import {
   Card,
@@ -28,6 +28,7 @@ export interface PieChartProps {
   data: Array<{
     label: string; // Item label
     value: number; // Item value
+    fill?: string; // Optional custom color for this segment
   }>;
   // Value unit (optional, e.g., "visitors", "users", etc.)
   unit?: string;
@@ -81,8 +82,6 @@ export function PieChart(props: PieChartProps) {
       name: item.label,
       label: item.label,
       value: item.value,
-      // Add fill property if needed
-      fill: `var(--color-${sanitizeCssVariableName(item.label)})`,
     }));
   }, [data]);
 
@@ -114,6 +113,12 @@ export function PieChart(props: PieChartProps) {
               innerRadius={60}
               strokeWidth={5}
             >
+              {chartData.map((_entry, index) => {
+                // Use custom fill color if provided, otherwise use default color cycle
+                const fillColor =
+                  data[index]?.fill || chartColors[index % chartColors.length];
+                return <Cell key={`cell-${index}`} fill={fillColor} />;
+              })}
               <Label
                 content={({ viewBox }) => {
                   if (viewBox && "cx" in viewBox && "cy" in viewBox) {

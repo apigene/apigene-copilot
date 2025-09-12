@@ -107,13 +107,14 @@ export const UsageByUser = ({ isLoading, interactions }: Props) => {
       <CardContent>
         <ChartContainer config={chartConfig}>
           <ResponsiveContainer width="100%" height={400}>
-            <RechartsBarChart data={chartData} layout="horizontal">
+            <RechartsBarChart data={chartData} layout="vertical">
               <CartesianGrid horizontal={false} />
               <XAxis
                 type="number"
                 tickLine={false}
                 tickMargin={10}
                 axisLine={false}
+                dataKey="usage"
                 label={{
                   value: "Number of Interactions",
                   position: "insideBottom",
@@ -132,7 +133,12 @@ export const UsageByUser = ({ isLoading, interactions }: Props) => {
                 cursor={false}
                 content={<ChartTooltipContent indicator="dashed" />}
               />
-              <Bar dataKey="usage" fill="#8884d8" radius={[0, 4, 4, 0]} />
+              <Bar
+                layout="vertical"
+                dataKey="usage"
+                fill="#8884d8"
+                radius={[0, 4, 4, 0]}
+              />
             </RechartsBarChart>
           </ResponsiveContainer>
         </ChartContainer>

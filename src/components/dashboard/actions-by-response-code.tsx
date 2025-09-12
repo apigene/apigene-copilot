@@ -62,7 +62,7 @@ export const ActionsByResponseCode = ({ isLoading, interactions }: Props) => {
     return labels.map((label, index) => ({
       label: `Status ${label}`,
       value: data[index],
-      color: backgroundColors[Number(label)] || "#9e9e9e", // Neutral gray for unknown status codes
+      fill: backgroundColors[Number(label)] || "#9e9e9e", // Neutral gray for unknown status codes
     }));
   }, [interactions, isLoading]);
 
