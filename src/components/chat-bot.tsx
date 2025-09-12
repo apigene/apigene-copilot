@@ -272,7 +272,8 @@ export default function ChatBot({ threadId, initialMessages }: Props) {
     if (!container) return;
 
     const { scrollTop, scrollHeight, clientHeight } = container;
-    const isScrollAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+    // Increased threshold from 50px to 100px for more reliable detection
+    const isScrollAtBottom = scrollHeight - scrollTop - clientHeight < 100;
 
     setIsAtBottom(isScrollAtBottom);
     handleFocus();
@@ -346,17 +347,45 @@ export default function ChatBot({ threadId, initialMessages }: Props) {
 
   // Auto-scroll enhancement: scroll to bottom every second during active conversation
   useEffect(() => {
-    if (!isLoading || !isAtBottom || messages.length === 0) return;
+    if (!isLoading || messages.length === 0) return;
 
     const interval = setInterval(() => {
-      // Only auto-scroll if we're still loading and user is at bottom
-      if (isLoading && isAtBottom) {
-        scrollToBottom();
+      // Auto-scroll during loading, but check if user is still near bottom
+      if (isLoading) {
+        const container = containerRef.current;
+        if (container) {
+          const { scrollTop, scrollHeight, clientHeight } = container;
+          const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+
+          // If user is near bottom or was at bottom when loading started, auto-scroll
+          if (isNearBottom || isAtBottom) {
+            scrollToBottom();
+          }
+        }
       }
     }, 1000);
 
     return () => clearInterval(interval);
   }, [isLoading, isAtBottom, messages.length, scrollToBottom]);
+
+  // Auto-scroll when new content is added during streaming
+  useEffect(() => {
+    if (isLoading && messages.length > 0) {
+      const container = containerRef.current;
+      if (container) {
+        const { scrollTop, scrollHeight, clientHeight } = container;
+        const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+
+        // Auto-scroll if user is near bottom when new content arrives
+        if (isNearBottom) {
+          // Use requestAnimationFrame to ensure DOM is updated
+          requestAnimationFrame(() => {
+            scrollToBottom();
+          });
+        }
+      }
+    }
+  }, [messages, isLoading, scrollToBottom]);
 
   // Scroll to bottom when copilot finishes sending messages and becomes ready
   useEffect(() => {
