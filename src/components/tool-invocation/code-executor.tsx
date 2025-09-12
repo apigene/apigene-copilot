@@ -49,9 +49,27 @@ export const CodeExecutor = memo(function CodeExecutor({
   const runCode = useCallback(
     async (code: string, type: "javascript" | "python") => {
       lastStartedAt.current = Date.now();
+      // Increase timeout for Python to accommodate Pyodide loading and package installation
+      const timeout = type === "python" ? 120000 : 30000; // 2 minutes for Python, 30s for JS
+
+      // Add initial logging
+      setRealtimeLogs((prev) => [
+        ...prev,
+        {
+          type: "log",
+          args: [
+            {
+              type: "data",
+              value: `🚀 Starting ${type} execution (timeout: ${timeout / 1000}s)...`,
+            },
+          ],
+          time: Date.now(),
+        },
+      ]);
+
       const result = await callCodeRunWorker(type, {
         code,
-        timeout: 30000,
+        timeout,
         onLog: (log) => {
           setRealtimeLogs((prev) => [...prev, { ...log, time: Date.now() }]);
         },
