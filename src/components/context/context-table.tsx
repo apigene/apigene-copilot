@@ -23,6 +23,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   MoreHorizontal,
   Search,
   ArrowUpDown,
@@ -35,8 +43,10 @@ import {
   FileText,
   Sparkles,
   Settings,
+  Loader2,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 type SortDirection = "asc" | "desc" | null;
 
@@ -193,6 +203,11 @@ export function ContextTable() {
       "actions",
     ]),
   );
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [contextToDelete, setContextToDelete] = useState<ContextData | null>(
+    null,
+  );
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const pageSize = 20;
   const apiClient = useApigeneApi();
@@ -312,6 +327,33 @@ export function ContextTable() {
     } else {
       setSortColumn(columnKey);
       setSortDirection("asc");
+    }
+  };
+
+  // Handle delete context
+  const handleDeleteContext = async () => {
+    if (!contextToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      await apiClient.delete(`/api/context/${contextToDelete.id}`);
+      toast.success("Context deleted successfully!");
+
+      // Remove the deleted context from the local state
+      setData((prevData) =>
+        prevData.filter((context) => context.id !== contextToDelete.id),
+      );
+
+      // Close dialog and reset state
+      setShowDeleteDialog(false);
+      setContextToDelete(null);
+    } catch (err) {
+      console.error("Error deleting context:", err);
+      toast.error(
+        err instanceof Error ? err.message : "Failed to delete context",
+      );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -555,8 +597,8 @@ export function ContextTable() {
                               <DropdownMenuItem
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  // TODO: Implement delete functionality
-                                  console.log("Delete", item);
+                                  setContextToDelete(item);
+                                  setShowDeleteDialog(true);
                                 }}
                                 className="text-red-400 hover:bg-red-500/10"
                               >
@@ -615,6 +657,50 @@ export function ContextTable() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Context</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete &quot;
+              {contextToDelete?.name}
+              &quot;? This action cannot be undone and will permanently remove
+              the context and all its data.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setContextToDelete(null);
+              }}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteContext}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Context
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
