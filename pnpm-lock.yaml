@@ -111,6 +111,9 @@ dependencies:
   '@tiptap/suggestion':
     specifier: ^2.26.1
     version: 2.26.1(@tiptap/core@2.26.1)(@tiptap/pm@2.26.1)
+  '@types/lodash':
+    specifier: ^4.17.20
+    version: 4.17.20
   '@uiw/react-md-editor':
     specifier: ^4.0.8
     version: 4.0.8(@types/react@19.1.12)(react-dom@19.1.1)(react@19.1.1)
@@ -168,6 +171,9 @@ dependencies:
   json-schema:
     specifier: ^0.4.0
     version: 0.4.0
+  lodash:
+    specifier: ^4.17.21
+    version: 4.17.21
   lucide-react:
     specifier: ^0.486.0
     version: 0.486.0(react@19.1.1)
@@ -3862,6 +3868,10 @@ packages:
 
   /@types/linkify-it@5.0.0:
     resolution: {integrity: sha512-sVDA58zAw4eWAffKOaQH5/5j3XeayukzDk+ewSsnv3p4yJEZHCCzMDiZM8e0OUrRvmpGZ85jf4yDHkHsgBNr9Q==}
+    dev: false
+
+  /@types/lodash@4.17.20:
+    resolution: {integrity: sha512-H3MHACvFUEiujabxhaI/ImO6gUrd8oOurg7LQtS7mbwIXA/cUqWrvBsaeJ23aZEPk1TAYkurjfMbSELfoCXlGA==}
     dev: false
 
   /@types/markdown-it@14.1.2:
