@@ -757,6 +757,17 @@ const CodeExecutor = dynamic(
   },
 );
 
+const DataProcessing = dynamic(
+  () =>
+    import("./tool-invocation/data-processing").then(
+      (mod) => mod.DataProcessing,
+    ),
+  {
+    ssr: false,
+    loading,
+  },
+);
+
 // Local shortcuts for tool invocation approval/rejection
 const approveToolInvocationShortcut: Shortcut = {
   description: "approveToolInvocation",
@@ -950,6 +961,13 @@ export const ToolMessagePart = memo(
           case DefaultToolName.CreateTable:
             return (
               <InteractiveTable
+                key={`${toolCallId}-${toolName}`}
+                {...(input as any)}
+              />
+            );
+          case DefaultToolName.DataProcessing:
+            return (
+              <DataProcessing
                 key={`${toolCallId}-${toolName}`}
                 {...(input as any)}
               />

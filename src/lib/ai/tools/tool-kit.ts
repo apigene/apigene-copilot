@@ -9,6 +9,7 @@ import { httpFetchTool } from "./http/fetch";
 import { jsExecutionTool } from "./code/js-run-tool";
 import { pythonExecutionTool } from "./code/python-run-tool";
 import { WORKFLOW_MANAGEMENT_TOOLS } from "./workflow";
+import { dataProcessingTool } from "./data/data-processing";
 
 export const APP_DEFAULT_TOOL_KIT: Record<
   AppDefaultToolkit,
@@ -32,4 +33,7 @@ export const APP_DEFAULT_TOOL_KIT: Record<
     [DefaultToolName.PythonExecution]: pythonExecutionTool,
   },
   [AppDefaultToolkit.WorkflowManagement]: WORKFLOW_MANAGEMENT_TOOLS,
+  [AppDefaultToolkit.DataProcessing]: {
+    [DefaultToolName.DataProcessing]: dataProcessingTool,
+  },
 };

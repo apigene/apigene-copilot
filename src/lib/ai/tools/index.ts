@@ -4,6 +4,7 @@ export enum AppDefaultToolkit {
   Http = "http",
   Code = "code",
   WorkflowManagement = "workflowBuilder",
+  DataProcessing = "dataProcessing",
 }
 
 export enum DefaultToolName {
@@ -17,6 +18,7 @@ export enum DefaultToolName {
   JavascriptExecution = "mini-javascript-execution",
   PythonExecution = "python-execution",
   WorkflowBuilder = "workflowBuilder",
+  DataProcessing = "dataProcessing",
 }
 
 export const SequentialThinkingToolName = "sequential-thinking";
