@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import connectToDatabase from "@/lib/db/mongodb";
-import { auth } from "@clerk/nextjs/server";
+import connectToDatabase from "@/lib/db/mongo/mongodb";
 
 export const dynamic = "force-dynamic";
 
@@ -21,23 +20,11 @@ export interface SummaryRequest {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get the current user's organization from Clerk
-    const { orgId } = await auth();
-
-    if (!orgId) {
-      console.log("No organization ID found for user");
-      return NextResponse.json(
-        { error: "User not associated with an organization" },
-        { status: 401 },
-      );
-    }
-
     const body: SummaryRequest = await request.json();
     const { startDate, endDate } = body;
 
     // Connect to MongoDB
-    const client = await connectToDatabase();
-    const databaseName = process.env.DATABASE_ENV + "_" + orgId;
+    const { client, databaseName } = await connectToDatabase();
 
     const db = await client.db(databaseName);
 

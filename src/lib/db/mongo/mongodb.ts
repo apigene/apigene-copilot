@@ -1,6 +1,14 @@
 import { MongoClient } from "mongodb";
+import { auth } from "@clerk/nextjs/server";
 
 const connectToDatabase = async () => {
+  // Get the current user's organization from Clerk
+  const { orgId } = await auth();
+
+  if (!orgId) {
+    throw new Error("User not associated with an organization");
+  }
+
   const MONGO_DB_URL = process.env.MONGO_DB_URL;
 
   if (!MONGO_DB_URL) {
@@ -24,7 +32,9 @@ const connectToDatabase = async () => {
     client = new MongoClient(MONGO_DB_URL);
   }
 
-  return client;
+  // Construct database name using orgId
+  const databaseName = process.env.DATABASE_ENV + "_" + orgId;
+  return { client, databaseName };
 };
 
 export default connectToDatabase;
