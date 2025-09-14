@@ -229,11 +229,11 @@ export class ApigeneClient {
       }
 
       // Log after receiving the response
-      console.log(`[ApigeneClient] Response received for ${method} ${url}:`, {
-        status: response.status,
-        statusText: response.statusText,
-        data: responseData,
-      });
+      // console.log(`[ApigeneClient] Response received for ${method} ${url}:`, {
+      //   status: response.status,
+      //   statusText: response.statusText,
+      //   data: responseData,
+      // });
 
       if (!response.ok) {
         throw new ApigeneApiError(

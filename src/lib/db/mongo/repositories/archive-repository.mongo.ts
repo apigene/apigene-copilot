@@ -1,6 +1,6 @@
 import { getCollection, COLLECTIONS } from "../mongodb";
-import { ObjectId } from "mongodb";
 import { getCurrentUserEmail } from "../auth-utils";
+import { randomUUID } from "crypto";
 import type {
   ArchiveRepository,
   Archive,
@@ -8,9 +8,11 @@ import type {
   ArchiveWithItemCount,
 } from "app-types/archive";
 
-// Helper function to check if a string is a valid ObjectId
-function isValidObjectId(id: string): boolean {
-  return ObjectId.isValid(id);
+// Helper function to check if a string is a valid UUID
+function isValidUUID(id: string): boolean {
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(id);
 }
 
 // MongoDB Archive Repository Implementation
@@ -30,6 +32,7 @@ export const mongoArchiveRepository: ArchiveRepository = {
     const now = new Date();
 
     const archiveDoc = {
+      id: randomUUID(),
       name: archive.name,
       description: archive.description,
       userId: userEmail, // Use current user email instead of passed userId
@@ -37,10 +40,10 @@ export const mongoArchiveRepository: ArchiveRepository = {
       updated_at: now,
     };
 
-    const insertResult = await collection.insertOne(archiveDoc);
+    await collection.insertOne(archiveDoc);
 
     const result: Archive = {
-      id: insertResult.insertedId.toString(),
+      id: archiveDoc.id,
       name: archiveDoc.name,
       description: archiveDoc.description,
       userId: archiveDoc.userId,
@@ -79,11 +82,11 @@ export const mongoArchiveRepository: ArchiveRepository = {
     const results = await Promise.all(
       archiveDocs.map(async (archiveDoc) => {
         const itemCount = await archiveItemCollection.countDocuments({
-          archiveId: archiveDoc._id.toString(),
+          archiveId: archiveDoc.id,
         });
 
         return {
-          id: archiveDoc._id.toString(),
+          id: archiveDoc.id,
           name: archiveDoc.name,
           description: archiveDoc.description,
           userId: archiveDoc.userId,
@@ -110,14 +113,14 @@ export const mongoArchiveRepository: ArchiveRepository = {
 
     const collection = await getCollection(COLLECTIONS.ARCHIVES);
 
-    if (!isValidObjectId(id)) {
+    if (!isValidUUID(id)) {
       console.log(
-        "✅ [MongoDB Archive Repository] getArchiveById result: null (invalid ObjectId)",
+        "✅ [MongoDB Archive Repository] getArchiveById result: null (invalid UUID)",
       );
       return null;
     }
 
-    const doc = await collection.findOne({ _id: new ObjectId(id) });
+    const doc = await collection.findOne({ id: id });
 
     if (!doc) {
       console.log(
@@ -127,7 +130,7 @@ export const mongoArchiveRepository: ArchiveRepository = {
     }
 
     const result: Archive = {
-      id: doc._id.toString(),
+      id: doc.id,
       name: doc.name,
       description: doc.description,
       userId: doc.userId,
@@ -152,8 +155,8 @@ export const mongoArchiveRepository: ArchiveRepository = {
     const collection = await getCollection(COLLECTIONS.ARCHIVES);
     const now = new Date();
 
-    if (!isValidObjectId(id)) {
-      throw new Error(`Invalid ObjectId: ${id}`);
+    if (!isValidUUID(id)) {
+      throw new Error(`Invalid UUID: ${id}`);
     }
 
     const updateDoc: any = {
@@ -165,7 +168,7 @@ export const mongoArchiveRepository: ArchiveRepository = {
       updateDoc.description = archive.description;
 
     const result = await collection.findOneAndUpdate(
-      { _id: new ObjectId(id) },
+      { id: id },
       { $set: updateDoc },
       { returnDocument: "after" },
     );
@@ -175,7 +178,7 @@ export const mongoArchiveRepository: ArchiveRepository = {
     }
 
     const archiveResult: Archive = {
-      id: result._id.toString(),
+      id: result.id,
       name: result.name,
       description: result.description,
       userId: result.userId,
@@ -201,15 +204,15 @@ export const mongoArchiveRepository: ArchiveRepository = {
       COLLECTIONS.ARCHIVE_ITEMS,
     );
 
-    if (!isValidObjectId(id)) {
-      throw new Error(`Invalid ObjectId: ${id}`);
+    if (!isValidUUID(id)) {
+      throw new Error(`Invalid UUID: ${id}`);
     }
 
     // Delete all items in the archive first
     await archiveItemCollection.deleteMany({ archiveId: id });
 
     // Delete the archive
-    await archiveCollection.deleteOne({ _id: new ObjectId(id) });
+    await archiveCollection.deleteOne({ id: id });
 
     console.log("✅ [MongoDB Archive Repository] deleteArchive completed");
   },
@@ -235,6 +238,7 @@ export const mongoArchiveRepository: ArchiveRepository = {
     const now = new Date();
 
     const itemDoc = {
+      id: randomUUID(),
       archiveId: archiveId,
       itemId: itemId,
       userId: userEmail, // Use current user email instead of passed userId
@@ -256,7 +260,7 @@ export const mongoArchiveRepository: ArchiveRepository = {
     }
 
     const archiveItemResult: ArchiveItem = {
-      id: result._id.toString(),
+      id: result.id,
       archiveId: result.archiveId,
       itemId: result.itemId,
       userId: result.userId,
@@ -307,7 +311,7 @@ export const mongoArchiveRepository: ArchiveRepository = {
       .toArray();
 
     const results: ArchiveItem[] = docs.map((doc) => ({
-      id: doc._id.toString(),
+      id: doc.id,
       archiveId: doc.archiveId,
       itemId: doc.itemId,
       userId: doc.userId,
@@ -350,13 +354,13 @@ export const mongoArchiveRepository: ArchiveRepository = {
     const results = await Promise.all(
       itemDocs.map(async (itemDoc) => {
         const archiveDoc = await archiveCollection.findOne({
-          _id: new ObjectId(itemDoc.archiveId),
+          id: itemDoc.archiveId,
         });
 
         if (!archiveDoc) return null;
 
         return {
-          id: archiveDoc._id.toString(),
+          id: archiveDoc.id,
           name: archiveDoc.name,
           description: archiveDoc.description,
           userId: archiveDoc.userId,

@@ -12,10 +12,10 @@ export async function mapClerkUserIdToUuid(
     image?: string;
   },
 ): Promise<string> {
-  console.log(
-    "🔗 [MongoDB User Mapping] mapClerkUserIdToUuid called with clerkUserId:",
-    clerkUserId,
-  );
+  // console.log(
+  //   "🔗 [MongoDB User Mapping] mapClerkUserIdToUuid called with clerkUserId:",
+  //   clerkUserId,
+  // );
 
   const accountsCollection = await getCollection(COLLECTIONS.ACCOUNTS);
   const usersCollection = await getCollection(COLLECTIONS.USERS);
@@ -27,10 +27,10 @@ export async function mapClerkUserIdToUuid(
   });
 
   if (existingAccount) {
-    console.log(
-      "✅ [MongoDB User Mapping] Found existing account mapping:",
-      existingAccount.userId,
-    );
+    // console.log(
+    //   "✅ [MongoDB User Mapping] Found existing account mapping:",
+    //   existingAccount.userId,
+    // );
     return existingAccount.userId;
   }
 
@@ -45,7 +45,7 @@ export async function mapClerkUserIdToUuid(
   if (existingUser) {
     // User already exists, use their ID
     userId = existingUser._id.toString();
-    console.log("✅ [MongoDB User Mapping] Found existing user:", userId);
+    // console.log("✅ [MongoDB User Mapping] Found existing user:", userId);
   } else {
     // Create a new user
     const now = new Date();
