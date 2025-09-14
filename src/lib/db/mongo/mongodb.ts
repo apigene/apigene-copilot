@@ -11,6 +11,7 @@ export const COLLECTIONS = {
   AGENTS: "agents",
   WORKFLOWS: "workflows",
   ARCHIVES: "archives",
+  ARCHIVE_ITEMS: "archive-items",
   BOOKMARKS: "bookmarks",
   MCP_OAUTH: "mcp-oauth",
   MCP_SERVER_CUSTOMIZATIONS: "mcp-server-customizations",

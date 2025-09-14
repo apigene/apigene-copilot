@@ -77,9 +77,8 @@ const getChatRepository = () => {
 };
 
 const getWorkflowRepository = () => {
-  return process.env.REPOSITORY_DB === "mongodb"
-    ? mongoWorkflowRepository
-    : pgWorkflowRepository;
+  const useMongoDB = process.env.REPOSITORY_DB === "mongodb";
+  return useMongoDB ? mongoWorkflowRepository : pgWorkflowRepository;
 };
 
 export const chatRepository = getChatRepository();

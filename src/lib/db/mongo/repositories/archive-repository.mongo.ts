@@ -1,4 +1,6 @@
-import { pgArchiveRepository } from "../../pg/repositories/archive-repository.pg";
+import { getCollection, COLLECTIONS } from "../mongodb";
+import { ObjectId } from "mongodb";
+import { getCurrentUserEmail } from "../auth-utils";
 import type {
   ArchiveRepository,
   Archive,
@@ -6,9 +8,12 @@ import type {
   ArchiveWithItemCount,
 } from "app-types/archive";
 
-// MongoDB Archive Repository - STUB IMPLEMENTATION
-// Currently delegates to PostgreSQL implementation
-// This allows incremental migration without breaking existing functionality
+// Helper function to check if a string is a valid ObjectId
+function isValidObjectId(id: string): boolean {
+  return ObjectId.isValid(id);
+}
+
+// MongoDB Archive Repository Implementation
 export const mongoArchiveRepository: ArchiveRepository = {
   async createArchive(archive) {
     console.log(
@@ -17,9 +22,32 @@ export const mongoArchiveRepository: ArchiveRepository = {
       "userId:",
       archive.userId,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgArchiveRepository.createArchive(archive);
+
+    // Get current user email for consistency
+    const userEmail = await getCurrentUserEmail();
+
+    const collection = await getCollection(COLLECTIONS.ARCHIVES);
+    const now = new Date();
+
+    const archiveDoc = {
+      name: archive.name,
+      description: archive.description,
+      userId: userEmail, // Use current user email instead of passed userId
+      created_at: now,
+      updated_at: now,
+    };
+
+    const insertResult = await collection.insertOne(archiveDoc);
+
+    const result: Archive = {
+      id: insertResult.insertedId.toString(),
+      name: archiveDoc.name,
+      description: archiveDoc.description,
+      userId: archiveDoc.userId,
+      createdAt: archiveDoc.created_at,
+      updatedAt: archiveDoc.updated_at,
+    };
+
     console.log(
       "✅ [MongoDB Archive Repository] createArchive result:",
       result,
@@ -32,15 +60,46 @@ export const mongoArchiveRepository: ArchiveRepository = {
       "🔍 [MongoDB Archive Repository] getArchivesByUserId called with userId:",
       userId,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    // const result = await pgArchiveRepository.getArchivesByUserId(userId);
-    // console.log(
-    //   "✅ [MongoDB Archive Repository] getArchivesByUserId result:",
-    //   result.length,
-    //   "archives found",
-    // );
-    return [];
+
+    // Get current user email for consistency
+    const userEmail = await getCurrentUserEmail();
+
+    const archiveCollection = await getCollection(COLLECTIONS.ARCHIVES);
+    const archiveItemCollection = await getCollection(
+      COLLECTIONS.ARCHIVE_ITEMS,
+    );
+
+    // Get all archives for the user
+    const archiveDocs = await archiveCollection
+      .find({ userId: userEmail }) // Use current user email instead of passed userId
+      .sort({ updated_at: 1 })
+      .toArray();
+
+    // Get item counts for each archive
+    const results = await Promise.all(
+      archiveDocs.map(async (archiveDoc) => {
+        const itemCount = await archiveItemCollection.countDocuments({
+          archiveId: archiveDoc._id.toString(),
+        });
+
+        return {
+          id: archiveDoc._id.toString(),
+          name: archiveDoc.name,
+          description: archiveDoc.description,
+          userId: archiveDoc.userId,
+          createdAt: archiveDoc.created_at,
+          updatedAt: archiveDoc.updated_at,
+          itemCount: itemCount,
+        } as ArchiveWithItemCount;
+      }),
+    );
+
+    console.log(
+      "✅ [MongoDB Archive Repository] getArchivesByUserId result:",
+      results.length,
+      "archives found",
+    );
+    return results;
   },
 
   async getArchiveById(id: string): Promise<Archive | null> {
@@ -48,12 +107,36 @@ export const mongoArchiveRepository: ArchiveRepository = {
       "🔍 [MongoDB Archive Repository] getArchiveById called with id:",
       id,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgArchiveRepository.getArchiveById(id);
+
+    const collection = await getCollection(COLLECTIONS.ARCHIVES);
+
+    if (!isValidObjectId(id)) {
+      console.log(
+        "✅ [MongoDB Archive Repository] getArchiveById result: null (invalid ObjectId)",
+      );
+      return null;
+    }
+
+    const doc = await collection.findOne({ _id: new ObjectId(id) });
+
+    if (!doc) {
+      console.log(
+        "✅ [MongoDB Archive Repository] getArchiveById result: null (archive not found)",
+      );
+      return null;
+    }
+
+    const result: Archive = {
+      id: doc._id.toString(),
+      name: doc.name,
+      description: doc.description,
+      userId: doc.userId,
+      createdAt: doc.created_at,
+      updatedAt: doc.updated_at,
+    };
+
     console.log(
-      "✅ [MongoDB Archive Repository] getArchiveById result:",
-      result ? "Archive found" : "Archive not found",
+      "✅ [MongoDB Archive Repository] getArchiveById result: Archive found",
     );
     return result;
   },
@@ -65,14 +148,46 @@ export const mongoArchiveRepository: ArchiveRepository = {
       "archive:",
       archive,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgArchiveRepository.updateArchive(id, archive);
+
+    const collection = await getCollection(COLLECTIONS.ARCHIVES);
+    const now = new Date();
+
+    if (!isValidObjectId(id)) {
+      throw new Error(`Invalid ObjectId: ${id}`);
+    }
+
+    const updateDoc: any = {
+      updated_at: now,
+    };
+
+    if (archive.name !== undefined) updateDoc.name = archive.name;
+    if (archive.description !== undefined)
+      updateDoc.description = archive.description;
+
+    const result = await collection.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      { $set: updateDoc },
+      { returnDocument: "after" },
+    );
+
+    if (!result) {
+      throw new Error(`Archive with id ${id} not found`);
+    }
+
+    const archiveResult: Archive = {
+      id: result._id.toString(),
+      name: result.name,
+      description: result.description,
+      userId: result.userId,
+      createdAt: result.created_at,
+      updatedAt: result.updated_at,
+    };
+
     console.log(
       "✅ [MongoDB Archive Repository] updateArchive result:",
-      result,
+      archiveResult,
     );
-    return result;
+    return archiveResult;
   },
 
   async deleteArchive(id: string): Promise<void> {
@@ -80,9 +195,22 @@ export const mongoArchiveRepository: ArchiveRepository = {
       "🗑️ [MongoDB Archive Repository] deleteArchive called with id:",
       id,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    await pgArchiveRepository.deleteArchive(id);
+
+    const archiveCollection = await getCollection(COLLECTIONS.ARCHIVES);
+    const archiveItemCollection = await getCollection(
+      COLLECTIONS.ARCHIVE_ITEMS,
+    );
+
+    if (!isValidObjectId(id)) {
+      throw new Error(`Invalid ObjectId: ${id}`);
+    }
+
+    // Delete all items in the archive first
+    await archiveItemCollection.deleteMany({ archiveId: id });
+
+    // Delete the archive
+    await archiveCollection.deleteOne({ _id: new ObjectId(id) });
+
     console.log("✅ [MongoDB Archive Repository] deleteArchive completed");
   },
 
@@ -99,18 +227,47 @@ export const mongoArchiveRepository: ArchiveRepository = {
       "userId:",
       userId,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgArchiveRepository.addItemToArchive(
-      archiveId,
-      itemId,
-      userId,
+
+    // Get current user email for consistency
+    const userEmail = await getCurrentUserEmail();
+
+    const collection = await getCollection(COLLECTIONS.ARCHIVE_ITEMS);
+    const now = new Date();
+
+    const itemDoc = {
+      archiveId: archiveId,
+      itemId: itemId,
+      userId: userEmail, // Use current user email instead of passed userId
+      added_at: now,
+    };
+
+    // Use upsert to avoid duplicates
+    const result = await collection.findOneAndUpdate(
+      {
+        archiveId: archiveId,
+        itemId: itemId,
+      },
+      { $set: itemDoc },
+      { upsert: true, returnDocument: "after" },
     );
+
+    if (!result) {
+      throw new Error("Failed to create archive item");
+    }
+
+    const archiveItemResult: ArchiveItem = {
+      id: result._id.toString(),
+      archiveId: result.archiveId,
+      itemId: result.itemId,
+      userId: result.userId,
+      addedAt: result.added_at,
+    };
+
     console.log(
       "✅ [MongoDB Archive Repository] addItemToArchive result:",
-      result,
+      archiveItemResult,
     );
-    return result;
+    return archiveItemResult;
   },
 
   async removeItemFromArchive(
@@ -123,9 +280,14 @@ export const mongoArchiveRepository: ArchiveRepository = {
       "itemId:",
       itemId,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    await pgArchiveRepository.removeItemFromArchive(archiveId, itemId);
+
+    const collection = await getCollection(COLLECTIONS.ARCHIVE_ITEMS);
+
+    await collection.deleteOne({
+      archiveId: archiveId,
+      itemId: itemId,
+    });
+
     console.log(
       "✅ [MongoDB Archive Repository] removeItemFromArchive completed",
     );
@@ -136,15 +298,28 @@ export const mongoArchiveRepository: ArchiveRepository = {
       "🔍 [MongoDB Archive Repository] getArchiveItems called with archiveId:",
       archiveId,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgArchiveRepository.getArchiveItems(archiveId);
+
+    const collection = await getCollection(COLLECTIONS.ARCHIVE_ITEMS);
+
+    const docs = await collection
+      .find({ archiveId: archiveId })
+      .sort({ added_at: 1 })
+      .toArray();
+
+    const results: ArchiveItem[] = docs.map((doc) => ({
+      id: doc._id.toString(),
+      archiveId: doc.archiveId,
+      itemId: doc.itemId,
+      userId: doc.userId,
+      addedAt: doc.added_at,
+    }));
+
     console.log(
       "✅ [MongoDB Archive Repository] getArchiveItems result:",
-      result.length,
+      results.length,
       "items found",
     );
-    return result;
+    return results;
   },
 
   async getItemArchives(itemId: string, userId: string): Promise<Archive[]> {
@@ -154,14 +329,53 @@ export const mongoArchiveRepository: ArchiveRepository = {
       "userId:",
       userId,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgArchiveRepository.getItemArchives(itemId, userId);
+
+    // Get current user email for consistency
+    const userEmail = await getCurrentUserEmail();
+
+    const archiveCollection = await getCollection(COLLECTIONS.ARCHIVES);
+    const archiveItemCollection = await getCollection(
+      COLLECTIONS.ARCHIVE_ITEMS,
+    );
+
+    // Find archive items for this item and user
+    const itemDocs = await archiveItemCollection
+      .find({
+        itemId: itemId,
+        userId: userEmail, // Use current user email instead of passed userId
+      })
+      .toArray();
+
+    // Get archive details for each item
+    const results = await Promise.all(
+      itemDocs.map(async (itemDoc) => {
+        const archiveDoc = await archiveCollection.findOne({
+          _id: new ObjectId(itemDoc.archiveId),
+        });
+
+        if (!archiveDoc) return null;
+
+        return {
+          id: archiveDoc._id.toString(),
+          name: archiveDoc.name,
+          description: archiveDoc.description,
+          userId: archiveDoc.userId,
+          createdAt: archiveDoc.created_at,
+          updatedAt: archiveDoc.updated_at,
+        } as Archive;
+      }),
+    );
+
+    // Filter out null results and sort by name
+    const filteredResults = results
+      .filter((result): result is Archive => result !== null)
+      .sort((a, b) => a.name.localeCompare(b.name));
+
     console.log(
       "✅ [MongoDB Archive Repository] getItemArchives result:",
-      result.length,
+      filteredResults.length,
       "archives found",
     );
-    return result;
+    return filteredResults;
   },
 };

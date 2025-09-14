@@ -1,9 +1,14 @@
-import { pgBookmarkRepository } from "../../pg/repositories/bookmark-repository.pg";
+import { getCollection, COLLECTIONS } from "../mongodb";
+import { ObjectId } from "mongodb";
+import { getCurrentUserEmail } from "../auth-utils";
 import type { BookmarkRepository } from "../../pg/repositories/bookmark-repository.pg";
 
-// MongoDB Bookmark Repository - STUB IMPLEMENTATION
-// Currently delegates to PostgreSQL implementation
-// This allows incremental migration without breaking existing functionality
+// Helper function to check if a string is a valid ObjectId
+function isValidObjectId(id: string): boolean {
+  return ObjectId.isValid(id);
+}
+
+// MongoDB Bookmark Repository Implementation
 export const mongoBookmarkRepository: BookmarkRepository = {
   async createBookmark(
     userId: string,
@@ -18,9 +23,32 @@ export const mongoBookmarkRepository: BookmarkRepository = {
       "itemType:",
       itemType,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    await pgBookmarkRepository.createBookmark(userId, itemId, itemType);
+
+    // Get current user email for consistency
+    const userEmail = await getCurrentUserEmail();
+
+    const collection = await getCollection(COLLECTIONS.BOOKMARKS);
+    const now = new Date();
+
+    const bookmarkDoc = {
+      userId: userEmail, // Use current user email instead of passed userId
+      itemId: itemId,
+      itemType: itemType,
+      created_at: now,
+      updated_at: now,
+    };
+
+    // Use upsert to avoid duplicates
+    await collection.updateOne(
+      {
+        userId: userEmail,
+        itemId: itemId,
+        itemType: itemType,
+      },
+      { $set: bookmarkDoc },
+      { upsert: true },
+    );
+
     console.log("✅ [MongoDB Bookmark Repository] createBookmark completed");
   },
 
@@ -37,9 +65,18 @@ export const mongoBookmarkRepository: BookmarkRepository = {
       "itemType:",
       itemType,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    await pgBookmarkRepository.removeBookmark(userId, itemId, itemType);
+
+    // Get current user email for consistency
+    const userEmail = await getCurrentUserEmail();
+
+    const collection = await getCollection(COLLECTIONS.BOOKMARKS);
+
+    await collection.deleteOne({
+      userId: userEmail, // Use current user email instead of passed userId
+      itemId: itemId,
+      itemType: itemType,
+    });
+
     console.log("✅ [MongoDB Bookmark Repository] removeBookmark completed");
   },
 
@@ -59,19 +96,20 @@ export const mongoBookmarkRepository: BookmarkRepository = {
       "isCurrentlyBookmarked:",
       isCurrentlyBookmarked,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgBookmarkRepository.toggleBookmark(
-      userId,
-      itemId,
-      itemType,
-      isCurrentlyBookmarked,
-    );
-    console.log(
-      "✅ [MongoDB Bookmark Repository] toggleBookmark result:",
-      result,
-    );
-    return result;
+
+    if (isCurrentlyBookmarked) {
+      await this.removeBookmark(userId, itemId, itemType);
+      console.log(
+        "✅ [MongoDB Bookmark Repository] toggleBookmark result: false (removed)",
+      );
+      return false;
+    } else {
+      await this.createBookmark(userId, itemId, itemType);
+      console.log(
+        "✅ [MongoDB Bookmark Repository] toggleBookmark result: true (added)",
+      );
+      return true;
+    }
   },
 
   async checkItemAccess(
@@ -87,17 +125,81 @@ export const mongoBookmarkRepository: BookmarkRepository = {
       "userId:",
       userId,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgBookmarkRepository.checkItemAccess(
-      itemId,
-      itemType,
-      userId,
-    );
+
+    // Get current user email for consistency
+    const userEmail = await getCurrentUserEmail();
+
+    if (itemType === "agent") {
+      const agentCollection = await getCollection(COLLECTIONS.AGENTS);
+
+      if (!isValidObjectId(itemId)) {
+        console.log(
+          "✅ [MongoDB Bookmark Repository] checkItemAccess result: false (invalid ObjectId)",
+        );
+        return false;
+      }
+
+      const agentDoc = await agentCollection.findOne({
+        _id: new ObjectId(itemId),
+      });
+
+      if (!agentDoc) {
+        console.log(
+          "✅ [MongoDB Bookmark Repository] checkItemAccess result: false (agent not found)",
+        );
+        return false;
+      }
+
+      // Can bookmark if it's public/readonly or if it's their own agent
+      const hasAccess =
+        agentDoc.visibility === "public" ||
+        agentDoc.visibility === "readonly" ||
+        agentDoc.created_by === userEmail; // Use current user email instead of passed userId
+
+      console.log(
+        "✅ [MongoDB Bookmark Repository] checkItemAccess result:",
+        hasAccess,
+      );
+      return hasAccess;
+    }
+
+    if (itemType === "workflow") {
+      const workflowCollection = await getCollection(COLLECTIONS.WORKFLOWS);
+
+      if (!isValidObjectId(itemId)) {
+        console.log(
+          "✅ [MongoDB Bookmark Repository] checkItemAccess result: false (invalid ObjectId)",
+        );
+        return false;
+      }
+
+      const workflowDoc = await workflowCollection.findOne({
+        _id: new ObjectId(itemId),
+      });
+
+      if (!workflowDoc) {
+        console.log(
+          "✅ [MongoDB Bookmark Repository] checkItemAccess result: false (workflow not found)",
+        );
+        return false;
+      }
+
+      // Can bookmark if it's public/readonly or if it's their own workflow
+      const hasAccess =
+        workflowDoc.visibility === "public" ||
+        workflowDoc.visibility === "readonly" ||
+        workflowDoc.userId === userEmail; // Use current user email instead of passed userId
+
+      console.log(
+        "✅ [MongoDB Bookmark Repository] checkItemAccess result:",
+        hasAccess,
+      );
+      return hasAccess;
+    }
+
     console.log(
-      "✅ [MongoDB Bookmark Repository] checkItemAccess result:",
-      result,
+      "✅ [MongoDB Bookmark Repository] checkItemAccess result: false (unsupported itemType)",
     );
-    return result;
+    return false;
   },
 };

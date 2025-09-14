@@ -8,6 +8,7 @@ export function isValidUUID(uuid: string): boolean {
 // Helper function to validate workflow ID and return appropriate response
 export function validateWorkflowId(id: string): Response | null {
   if (!isValidUUID(id)) {
+    console.log("Invalid workflow ID format:", id);
     return new Response("Invalid workflow ID format", { status: 400 });
   }
   return null;
