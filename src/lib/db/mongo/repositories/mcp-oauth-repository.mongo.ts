@@ -1,9 +1,7 @@
-import { pgMcpOAuthRepository } from "../../pg/repositories/mcp-oauth-repository.pg";
+import { getCollection, COLLECTIONS } from "../mongodb";
+import { getCurrentUserEmail } from "../auth-utils";
 import type { McpOAuthRepository, McpOAuthSession } from "app-types/mcp";
 
-// MongoDB MCP OAuth Repository - STUB IMPLEMENTATION
-// Currently delegates to PostgreSQL implementation
-// This allows incremental migration without breaking existing functionality
 export const mongoMcpOAuthRepository: McpOAuthRepository = {
   // 1. Query methods
 
@@ -15,13 +13,42 @@ export const mongoMcpOAuthRepository: McpOAuthRepository = {
       "🔐 [MongoDB MCP OAuth Repository] getAuthenticatedSession called with mcpServerId:",
       mcpServerId,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result =
-      await pgMcpOAuthRepository.getAuthenticatedSession(mcpServerId);
+
+    // Get current user information
+    const userEmail = await getCurrentUserEmail();
+
+    const collection = await getCollection(COLLECTIONS.MCP_OAUTH);
+
+    const doc = await collection.findOne(
+      {
+        mcpServerId: mcpServerId,
+        created_by: userEmail,
+        tokens: { $exists: true, $ne: null },
+      },
+      { sort: { updatedAt: -1 } },
+    );
+
+    if (!doc) {
+      console.log(
+        "✅ [MongoDB MCP OAuth Repository] getAuthenticatedSession result: No session found",
+      );
+      return undefined;
+    }
+
+    const result: McpOAuthSession = {
+      id: doc._id.toString(),
+      mcpServerId: doc.mcpServerId,
+      serverUrl: doc.serverUrl,
+      clientInfo: doc.clientInfo,
+      tokens: doc.tokens,
+      codeVerifier: doc.codeVerifier,
+      state: doc.state,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
+    };
+
     console.log(
-      "✅ [MongoDB MCP OAuth Repository] getAuthenticatedSession result:",
-      result ? "Session found" : "No session found",
+      "✅ [MongoDB MCP OAuth Repository] getAuthenticatedSession result: Session found",
     );
     return result;
   },
@@ -34,12 +61,45 @@ export const mongoMcpOAuthRepository: McpOAuthRepository = {
       "🔍 [MongoDB MCP OAuth Repository] getSessionByState called with state:",
       state,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgMcpOAuthRepository.getSessionByState(state);
+
+    if (!state) {
+      console.log(
+        "✅ [MongoDB MCP OAuth Repository] getSessionByState result: No state provided",
+      );
+      return undefined;
+    }
+
+    // Get current user information
+    const userEmail = await getCurrentUserEmail();
+
+    const collection = await getCollection(COLLECTIONS.MCP_OAUTH);
+
+    const doc = await collection.findOne({
+      state: state,
+      created_by: userEmail,
+    });
+
+    if (!doc) {
+      console.log(
+        "✅ [MongoDB MCP OAuth Repository] getSessionByState result: No session found",
+      );
+      return undefined;
+    }
+
+    const result: McpOAuthSession = {
+      id: doc._id.toString(),
+      mcpServerId: doc.mcpServerId,
+      serverUrl: doc.serverUrl,
+      clientInfo: doc.clientInfo,
+      tokens: doc.tokens,
+      codeVerifier: doc.codeVerifier,
+      state: doc.state,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
+    };
+
     console.log(
-      "✅ [MongoDB MCP OAuth Repository] getSessionByState result:",
-      result ? "Session found" : "No session found",
+      "✅ [MongoDB MCP OAuth Repository] getSessionByState result: Session found",
     );
     return result;
   },
@@ -57,9 +117,39 @@ export const mongoMcpOAuthRepository: McpOAuthRepository = {
       "data:",
       data,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgMcpOAuthRepository.createSession(mcpServerId, data);
+
+    // Get current user information
+    const userEmail = await getCurrentUserEmail();
+
+    const collection = await getCollection(COLLECTIONS.MCP_OAUTH);
+    const now = new Date();
+
+    const sessionDoc = {
+      mcpServerId: mcpServerId,
+      serverUrl: data.serverUrl || "",
+      clientInfo: data.clientInfo,
+      tokens: data.tokens,
+      codeVerifier: data.codeVerifier,
+      state: data.state,
+      created_by: userEmail,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const insertResult = await collection.insertOne(sessionDoc);
+
+    const result: McpOAuthSession = {
+      id: insertResult.insertedId.toString(),
+      mcpServerId: sessionDoc.mcpServerId,
+      serverUrl: sessionDoc.serverUrl,
+      clientInfo: sessionDoc.clientInfo,
+      tokens: sessionDoc.tokens,
+      codeVerifier: sessionDoc.codeVerifier,
+      state: sessionDoc.state,
+      createdAt: sessionDoc.createdAt,
+      updatedAt: sessionDoc.updatedAt,
+    };
+
     console.log(
       "✅ [MongoDB MCP OAuth Repository] createSession result:",
       result,
@@ -78,14 +168,54 @@ export const mongoMcpOAuthRepository: McpOAuthRepository = {
       "data:",
       data,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgMcpOAuthRepository.updateSessionByState(state, data);
+
+    // Get current user information
+    const userEmail = await getCurrentUserEmail();
+
+    const collection = await getCollection(COLLECTIONS.MCP_OAUTH);
+    const now = new Date();
+
+    const updateDoc: any = {
+      updatedAt: now,
+    };
+
+    if (data.serverUrl !== undefined) updateDoc.serverUrl = data.serverUrl;
+    if (data.clientInfo !== undefined) updateDoc.clientInfo = data.clientInfo;
+    if (data.tokens !== undefined) updateDoc.tokens = data.tokens;
+    if (data.codeVerifier !== undefined)
+      updateDoc.codeVerifier = data.codeVerifier;
+    if (data.state !== undefined) updateDoc.state = data.state;
+
+    const result = await collection.findOneAndUpdate(
+      {
+        state: state,
+        created_by: userEmail,
+      },
+      { $set: updateDoc },
+      { returnDocument: "after" },
+    );
+
+    if (!result) {
+      throw new Error(`Session with state ${state} not found`);
+    }
+
+    const sessionResult: McpOAuthSession = {
+      id: result._id.toString(),
+      mcpServerId: result.mcpServerId,
+      serverUrl: result.serverUrl,
+      clientInfo: result.clientInfo,
+      tokens: result.tokens,
+      codeVerifier: result.codeVerifier,
+      state: result.state,
+      createdAt: result.createdAt,
+      updatedAt: result.updatedAt,
+    };
+
     console.log(
       "✅ [MongoDB MCP OAuth Repository] updateSessionByState result:",
-      result,
+      sessionResult,
     );
-    return result;
+    return sessionResult;
   },
 
   saveTokensAndCleanup: async (
@@ -99,18 +229,63 @@ export const mongoMcpOAuthRepository: McpOAuthRepository = {
       "mcpServerId:",
       mcpServerId,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgMcpOAuthRepository.saveTokensAndCleanup(
-      state,
-      mcpServerId,
-      data,
+
+    // Get current user information
+    const userEmail = await getCurrentUserEmail();
+
+    const collection = await getCollection(COLLECTIONS.MCP_OAUTH);
+    const now = new Date();
+
+    // Update the session with new data
+    const updateDoc: any = {
+      updatedAt: now,
+    };
+
+    if (data.serverUrl !== undefined) updateDoc.serverUrl = data.serverUrl;
+    if (data.clientInfo !== undefined) updateDoc.clientInfo = data.clientInfo;
+    if (data.tokens !== undefined) updateDoc.tokens = data.tokens;
+    if (data.codeVerifier !== undefined)
+      updateDoc.codeVerifier = data.codeVerifier;
+    if (data.state !== undefined) updateDoc.state = data.state;
+
+    const result = await collection.findOneAndUpdate(
+      {
+        state: state,
+        created_by: userEmail,
+      },
+      { $set: updateDoc },
+      { returnDocument: "after" },
     );
+
+    if (!result) {
+      throw new Error(`Session with state ${state} not found`);
+    }
+
+    // Cleanup incomplete sessions for the same MCP server and user
+    await collection.deleteMany({
+      mcpServerId: mcpServerId,
+      created_by: userEmail,
+      tokens: { $exists: false },
+      state: { $ne: state },
+    });
+
+    const sessionResult: McpOAuthSession = {
+      id: result._id.toString(),
+      mcpServerId: result.mcpServerId,
+      serverUrl: result.serverUrl,
+      clientInfo: result.clientInfo,
+      tokens: result.tokens,
+      codeVerifier: result.codeVerifier,
+      state: result.state,
+      createdAt: result.createdAt,
+      updatedAt: result.updatedAt,
+    };
+
     console.log(
       "✅ [MongoDB MCP OAuth Repository] saveTokensAndCleanup result:",
-      result,
+      sessionResult,
     );
-    return result;
+    return sessionResult;
   },
 
   // Delete a session by its OAuth state
@@ -119,9 +294,17 @@ export const mongoMcpOAuthRepository: McpOAuthRepository = {
       "🗑️ [MongoDB MCP OAuth Repository] deleteByState called with state:",
       state,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    await pgMcpOAuthRepository.deleteByState(state);
+
+    // Get current user information
+    const userEmail = await getCurrentUserEmail();
+
+    const collection = await getCollection(COLLECTIONS.MCP_OAUTH);
+
+    await collection.deleteOne({
+      state: state,
+      created_by: userEmail,
+    });
+
     console.log("✅ [MongoDB MCP OAuth Repository] deleteByState completed");
   },
 };

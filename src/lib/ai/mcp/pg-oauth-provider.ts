@@ -14,13 +14,14 @@ import {
 import globalLogger from "lib/logger";
 import { colorize } from "consola/utils";
 import { generateUUID } from "lib/utils";
-import { pgMcpOAuthRepository } from "lib/db/pg/repositories/mcp-oauth-repository.pg";
+import { mcpOAuthRepository } from "lib/db/repository";
 import { McpOAuthSession } from "app-types/mcp";
 import { ConsolaInstance } from "consola";
 
 /**
- * PostgreSQL-based OAuth client provider for MCP servers
+ * Database-agnostic OAuth client provider for MCP servers
  * Manages OAuth authentication state and tokens with multi-instance support
+ * Uses the repository adapter to switch between PostgreSQL and MongoDB
  */
 export class PgOAuthClientProvider implements OAuthClientProvider {
   private currentOAuthState: string = "";
@@ -50,7 +51,7 @@ export class PgOAuthClientProvider implements OAuthClientProvider {
     if (this.initialized) return;
     // 0. If a constructor state was provided (callback/hand-off), adopt it first
     if (this.config.state) {
-      const session = await pgMcpOAuthRepository.getSessionByState(
+      const session = await mcpOAuthRepository.getSessionByState(
         this.config.state,
       );
       if (session && session.mcpServerId === this.config.mcpServerId) {
@@ -62,7 +63,7 @@ export class PgOAuthClientProvider implements OAuthClientProvider {
       }
     }
     // 1. Check for authenticated session first
-    const authenticated = await pgMcpOAuthRepository.getAuthenticatedSession(
+    const authenticated = await mcpOAuthRepository.getAuthenticatedSession(
       this.config.mcpServerId,
     );
     if (authenticated) {
@@ -75,7 +76,7 @@ export class PgOAuthClientProvider implements OAuthClientProvider {
 
     // 2. Always create a new in-progress session when not authenticated
     this.currentOAuthState = generateUUID();
-    this.cachedAuthData = await pgMcpOAuthRepository.createSession(
+    this.cachedAuthData = await mcpOAuthRepository.createSession(
       this.config.mcpServerId,
       {
         state: this.currentOAuthState,
@@ -96,7 +97,7 @@ export class PgOAuthClientProvider implements OAuthClientProvider {
       throw new Error("OAuth not initialized");
     }
 
-    this.cachedAuthData = await pgMcpOAuthRepository.updateSessionByState(
+    this.cachedAuthData = await mcpOAuthRepository.updateSessionByState(
       this.currentOAuthState,
       data,
     );
@@ -125,7 +126,7 @@ export class PgOAuthClientProvider implements OAuthClientProvider {
       ) {
         // Security guard: redirect URI mismatch → drop only this mismatched session by state
         if (authData.state) {
-          await pgMcpOAuthRepository.deleteByState(authData.state);
+          await mcpOAuthRepository.deleteByState(authData.state);
         }
         this.cachedAuthData = undefined;
         this.initialized = false;
@@ -158,7 +159,7 @@ export class PgOAuthClientProvider implements OAuthClientProvider {
 
   async saveTokens(accessTokens: OAuthTokens): Promise<void> {
     // Store tokens for current state
-    this.cachedAuthData = await pgMcpOAuthRepository.saveTokensAndCleanup(
+    this.cachedAuthData = await mcpOAuthRepository.saveTokensAndCleanup(
       this.currentOAuthState,
       this.config.mcpServerId,
       { tokens: accessTokens },
@@ -192,7 +193,7 @@ export class PgOAuthClientProvider implements OAuthClientProvider {
    */
   async adoptState(state: string): Promise<void> {
     if (!state) return;
-    const session = await pgMcpOAuthRepository.getSessionByState(state);
+    const session = await mcpOAuthRepository.getSessionByState(state);
     if (!session) return;
     if (session.mcpServerId !== this.config.mcpServerId) {
       this.logger.warn(
@@ -212,7 +213,7 @@ export class PgOAuthClientProvider implements OAuthClientProvider {
     try {
       switch (invalidationScope) {
         case "all":
-          await pgMcpOAuthRepository.deleteByState(this.currentOAuthState);
+          await mcpOAuthRepository.deleteByState(this.currentOAuthState);
           this.cachedAuthData = undefined;
           this.initialized = false;
           this.currentOAuthState = "";

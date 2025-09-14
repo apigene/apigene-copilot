@@ -34,13 +34,13 @@ export const mongoArchiveRepository: ArchiveRepository = {
     );
     // TODO: Implement MongoDB version
     // For now, delegate to PostgreSQL
-    const result = await pgArchiveRepository.getArchivesByUserId(userId);
-    console.log(
-      "✅ [MongoDB Archive Repository] getArchivesByUserId result:",
-      result.length,
-      "archives found",
-    );
-    return result;
+    // const result = await pgArchiveRepository.getArchivesByUserId(userId);
+    // console.log(
+    //   "✅ [MongoDB Archive Repository] getArchivesByUserId result:",
+    //   result.length,
+    //   "archives found",
+    // );
+    return [];
   },
 
   async getArchiveById(id: string): Promise<Archive | null> {

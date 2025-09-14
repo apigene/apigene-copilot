@@ -247,4 +247,11 @@ export const pgChatRepository: ChatRepository = {
       .returning();
     return result as ChatMessage[];
   },
+
+  checkThreadAccess: async (
+    threadUserId: string,
+    sessionUserId: string,
+  ): Promise<boolean> => {
+    return threadUserId === sessionUserId;
+  },
 };
