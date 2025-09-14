@@ -80,7 +80,9 @@ export async function POST(request: Request) {
       thread = await chatRepository.selectThreadDetails(newThread.id);
     }
 
-    if (thread!.userId !== session.user.id) {
+    if (
+      !(await chatRepository.checkThreadAccess(thread!.userId, session.user.id))
+    ) {
       return new Response("Forbidden", { status: 403 });
     }
 

@@ -8,6 +8,47 @@ function isValidObjectId(id: string): boolean {
   return ObjectId.isValid(id);
 }
 
+// Helper function to convert UUID to email
+async function getEmailFromUserId(userId: string): Promise<string> {
+  // If it's already an email, return it
+  if (userId.includes("@")) {
+    return userId;
+  }
+
+  // If it's a UUID, look it up in the users collection
+  if (isValidObjectId(userId)) {
+    const usersCollection = await getCollection(COLLECTIONS.USERS);
+    const userDoc = await usersCollection.findOne(
+      { _id: new ObjectId(userId) },
+      { projection: { email: 1 } },
+    );
+
+    if (userDoc?.email) {
+      return userDoc.email;
+    }
+  }
+
+  // Fallback to current user email
+  return await getCurrentUserEmail();
+}
+
+// Helper function to check if a user has access to a thread
+async function checkThreadAccess(
+  threadUserId: string,
+  sessionUserId: string,
+): Promise<boolean> {
+  // If threadUserId is already an email, compare directly with session user email
+  if (threadUserId.includes("@")) {
+    const sessionUserEmail = await getEmailFromUserId(sessionUserId);
+    return threadUserId === sessionUserEmail;
+  }
+
+  // If threadUserId is a UUID, convert sessionUserId to email and compare
+  const sessionUserEmail = await getEmailFromUserId(sessionUserId);
+  const threadUserEmail = await getEmailFromUserId(threadUserId);
+  return threadUserEmail === sessionUserEmail;
+}
+
 // MongoDB Chat Repository Implementation
 export const mongoChatRepository: ChatRepository = {
   async insertThread(
@@ -125,9 +166,12 @@ export const mongoChatRepository: ChatRepository = {
       .sort({ created_at: 1 })
       .toArray();
 
+    // Get current user email for consistency with agent repository
+    const userEmail = await getCurrentUserEmail();
+
     // Get user preferences
     const userDoc = await userCollection.findOne(
-      { email: threadDoc.userId }, // Query by email instead of ObjectId
+      { email: userEmail }, // Query by current user email instead of threadDoc.userId
       { projection: { preferences: 1 } },
     );
 
@@ -195,13 +239,13 @@ export const mongoChatRepository: ChatRepository = {
       userId,
     );
 
-    // Get current user email for consistency with agent repository
-    const userEmail = await getCurrentUserEmail();
+    // Convert userId (UUID or email) to email
+    const userEmail = await getEmailFromUserId(userId);
 
     const threadCollection = await getCollection(COLLECTIONS.CHAT_THREADS);
     const messageCollection = await getCollection(COLLECTIONS.CHAT_MESSAGES);
 
-    // Get threads - query by user email instead of passed userId
+    // Get threads - query by user email
     const threadDocs = await threadCollection
       .find({ userId: userEmail })
       .sort({ updated_at: -1 })
@@ -211,12 +255,12 @@ export const mongoChatRepository: ChatRepository = {
     const results = await Promise.all(
       threadDocs.map(async (threadDoc) => {
         const lastMessage = await messageCollection.findOne(
-          { threadId: threadDoc._id.toString() },
+          { threadId: threadDoc.threadId },
           { sort: { created_at: -1 } },
         );
 
         return {
-          id: threadDoc._id.toString(),
+          id: threadDoc.threadId,
           title: threadDoc.title,
           userId: threadDoc.userId,
           createdAt: threadDoc.created_at,
@@ -470,18 +514,21 @@ export const mongoChatRepository: ChatRepository = {
       userId,
     );
 
+    // Convert userId (UUID or email) to email
+    const userEmail = await getEmailFromUserId(userId);
+
     const threadCollection = await getCollection(COLLECTIONS.CHAT_THREADS);
     const messageCollection = await getCollection(COLLECTIONS.CHAT_MESSAGES);
 
     // Get all thread IDs for this user (userId is now user email)
     const threads = await threadCollection
-      .find({ userId: userId }, { projection: { _id: 1 } })
+      .find({ userId: userEmail }, { projection: { _id: 1 } })
       .toArray();
 
     const threadIds = threads.map((t) => t._id.toString());
 
     // Delete all threads
-    await threadCollection.deleteMany({ userId: userId });
+    await threadCollection.deleteMany({ userId: userEmail });
 
     // Delete all messages in these threads
     if (threadIds.length > 0) {
@@ -497,9 +544,12 @@ export const mongoChatRepository: ChatRepository = {
       userId,
     );
 
+    // Convert userId (UUID or email) to email
+    const userEmail = await getEmailFromUserId(userId);
+
     // For now, this is the same as deleteAllThreads since we don't have archive status in MongoDB yet
     // TODO: Implement archive status tracking
-    await this.deleteAllThreads(userId);
+    await this.deleteAllThreads(userEmail);
 
     console.log(
       "✅ [MongoDB Chat Repository] deleteUnarchivedThreads completed",
@@ -543,5 +593,13 @@ export const mongoChatRepository: ChatRepository = {
       "messages inserted",
     );
     return results;
+  },
+
+  // Helper method to check thread access
+  async checkThreadAccess(
+    threadUserId: string,
+    sessionUserId: string,
+  ): Promise<boolean> {
+    return await checkThreadAccess(threadUserId, sessionUserId);
   },
 };

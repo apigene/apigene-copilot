@@ -149,6 +149,11 @@ export type ChatRepository = {
   insertMessages(
     messages: PartialBy<ChatMessage, "createdAt">[],
   ): Promise<ChatMessage[]>;
+
+  checkThreadAccess(
+    threadUserId: string,
+    sessionUserId: string,
+  ): Promise<boolean>;
 };
 
 export const ManualToolConfirmTag = tag<{
