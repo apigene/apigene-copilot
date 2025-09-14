@@ -2,6 +2,10 @@ import { pgDb as db } from "lib/db/pg/db.pg";
 import { AccountSchema, UserSchema } from "lib/db/pg/schema.pg";
 import { eq, and } from "drizzle-orm";
 
+// MongoDB imports
+import { mapClerkUserIdToUuid as mongoMapClerkUserIdToUuid } from "./user-mapping.mongo";
+import { getUuidForClerkUserId as mongoGetUuidForClerkUserId } from "./user-mapping.mongo";
+
 /**
  * Maps Clerk user ID to internal database UUID
  * Creates a user record if it doesn't exist
@@ -14,6 +18,12 @@ export async function mapClerkUserIdToUuid(
     image?: string;
   },
 ): Promise<string> {
+  // Use MongoDB if configured
+  if (process.env.REPOSITORY_DB === "mongodb") {
+    return mongoMapClerkUserIdToUuid(clerkUserId, userData);
+  }
+
+  // PostgreSQL implementation
   // First, try to find existing mapping
   const existingAccount = await db
     .select({ userId: AccountSchema.userId })
@@ -78,6 +88,12 @@ export async function mapClerkUserIdToUuid(
 export async function getUuidForClerkUserId(
   clerkUserId: string,
 ): Promise<string | null> {
+  // Use MongoDB if configured
+  if (process.env.REPOSITORY_DB === "mongodb") {
+    return mongoGetUuidForClerkUserId(clerkUserId);
+  }
+
+  // PostgreSQL implementation
   const result = await db
     .select({ userId: AccountSchema.userId })
     .from(AccountSchema)

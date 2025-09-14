@@ -4,9 +4,17 @@ import { auth } from "@clerk/nextjs/server";
 // Collection names constants
 export const COLLECTIONS = {
   MCP_SERVERS: "mcp-servers",
-  // Add other collection names here as needed
-  // CHATS: "chats",
-  // USERS: "users",
+  USERS: "users",
+  ACCOUNTS: "accounts",
+  CHAT_THREADS: "chat-threads",
+  CHAT_MESSAGES: "chat-messages",
+  AGENTS: "agents",
+  WORKFLOWS: "workflows",
+  ARCHIVES: "archives",
+  BOOKMARKS: "bookmarks",
+  MCP_OAUTH: "mcp-oauth",
+  MCP_SERVER_CUSTOMIZATIONS: "mcp-server-customizations",
+  MCP_TOOL_CUSTOMIZATIONS: "mcp-tool-customizations",
 } as const;
 
 // Helper function to get a collection

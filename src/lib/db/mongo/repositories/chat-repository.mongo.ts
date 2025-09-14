@@ -1,9 +1,14 @@
-import { pgChatRepository } from "../../pg/repositories/chat-repository.pg";
+import { getCollection, COLLECTIONS } from "../mongodb";
+import { ObjectId } from "mongodb";
+import { getCurrentUserEmail } from "../auth-utils";
 import type { ChatRepository, ChatMessage, ChatThread } from "app-types/chat";
 
-// MongoDB Chat Repository - STUB IMPLEMENTATION
-// Currently delegates to PostgreSQL implementation
-// This allows incremental migration without breaking existing functionality
+// Helper function to check if a string is a valid ObjectId
+function isValidObjectId(id: string): boolean {
+  return ObjectId.isValid(id);
+}
+
+// MongoDB Chat Repository Implementation
 export const mongoChatRepository: ChatRepository = {
   async insertThread(
     thread: Omit<ChatThread, "createdAt">,
@@ -13,10 +18,33 @@ export const mongoChatRepository: ChatRepository = {
       thread.title,
       "userId:",
       thread.userId,
+      "id:",
+      thread.id,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgChatRepository.insertThread(thread);
+
+    // Get current user email for consistency with agent repository
+    const userEmail = await getCurrentUserEmail();
+
+    const collection = await getCollection(COLLECTIONS.CHAT_THREADS);
+    const now = new Date();
+
+    const threadDoc = {
+      threadId: thread.id || new ObjectId().toString(),
+      title: thread.title,
+      userId: userEmail, // Ignore passed userId, use current user email
+      created_at: now,
+      updated_at: now,
+    };
+
+    await collection.insertOne(threadDoc);
+
+    const result: ChatThread = {
+      id: threadDoc.threadId,
+      title: thread.title,
+      userId: userEmail, // Use user email instead of internal UUID
+      createdAt: now,
+    };
+
     console.log("✅ [MongoDB Chat Repository] insertThread result:", result);
     return result;
   },
@@ -26,12 +54,27 @@ export const mongoChatRepository: ChatRepository = {
       "🔍 [MongoDB Chat Repository] selectThread called with id:",
       id,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgChatRepository.selectThread(id);
+
+    const collection = await getCollection(COLLECTIONS.CHAT_THREADS);
+
+    const doc = await collection.findOne({ threadId: id });
+
+    if (!doc) {
+      console.log(
+        "✅ [MongoDB Chat Repository] selectThread result: Thread not found",
+      );
+      return null;
+    }
+
+    const result: ChatThread = {
+      id: doc.threadId,
+      title: doc.title,
+      userId: doc.userId,
+      createdAt: doc.created_at,
+    };
+
     console.log(
-      "✅ [MongoDB Chat Repository] selectThread result:",
-      result ? "Thread found" : "Thread not found",
+      "✅ [MongoDB Chat Repository] selectThread result: Thread found",
     );
     return result;
   },
@@ -41,9 +84,18 @@ export const mongoChatRepository: ChatRepository = {
       "🗑️ [MongoDB Chat Repository] deleteChatMessage called with id:",
       id,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    await pgChatRepository.deleteChatMessage(id);
+
+    const collection = await getCollection(COLLECTIONS.CHAT_MESSAGES);
+
+    if (!isValidObjectId(id)) {
+      console.log(
+        "✅ [MongoDB Chat Repository] deleteChatMessage: Invalid ObjectId",
+      );
+      return;
+    }
+
+    await collection.deleteOne({ _id: new ObjectId(id) });
+
     console.log("✅ [MongoDB Chat Repository] deleteChatMessage completed");
   },
 
@@ -52,12 +104,57 @@ export const mongoChatRepository: ChatRepository = {
       "🔍 [MongoDB Chat Repository] selectThreadDetails called with id:",
       id,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgChatRepository.selectThreadDetails(id);
+
+    const threadCollection = await getCollection(COLLECTIONS.CHAT_THREADS);
+    const messageCollection = await getCollection(COLLECTIONS.CHAT_MESSAGES);
+    const userCollection = await getCollection(COLLECTIONS.USERS);
+
+    // Get thread
+    const threadDoc = await threadCollection.findOne({ threadId: id });
+
+    if (!threadDoc) {
+      console.log(
+        "✅ [MongoDB Chat Repository] selectThreadDetails result: Thread not found",
+      );
+      return null;
+    }
+
+    // Get messages for this thread
+    const messageDocs = await messageCollection
+      .find({ threadId: id })
+      .sort({ created_at: 1 })
+      .toArray();
+
+    // Get user preferences
+    const userDoc = await userCollection.findOne(
+      { email: threadDoc.userId }, // Query by email instead of ObjectId
+      { projection: { preferences: 1 } },
+    );
+
+    const thread: ChatThread = {
+      id: threadDoc.threadId,
+      title: threadDoc.title,
+      userId: threadDoc.userId,
+      createdAt: threadDoc.created_at,
+    };
+
+    const messages: ChatMessage[] = messageDocs.map((doc) => ({
+      id: doc._id.toString(),
+      threadId: doc.threadId,
+      role: doc.role,
+      parts: doc.parts,
+      metadata: doc.metadata,
+      createdAt: doc.created_at,
+    }));
+
+    const result = {
+      ...thread,
+      messages,
+      userPreferences: userDoc?.preferences,
+    };
+
     console.log(
-      "✅ [MongoDB Chat Repository] selectThreadDetails result:",
-      result ? "Thread details found" : "Thread not found",
+      "✅ [MongoDB Chat Repository] selectThreadDetails result: Thread details found",
     );
     return result;
   },
@@ -67,15 +164,29 @@ export const mongoChatRepository: ChatRepository = {
       "🔍 [MongoDB Chat Repository] selectMessagesByThreadId called with threadId:",
       threadId,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgChatRepository.selectMessagesByThreadId(threadId);
+
+    const collection = await getCollection(COLLECTIONS.CHAT_MESSAGES);
+
+    const docs = await collection
+      .find({ threadId: threadId })
+      .sort({ created_at: 1 })
+      .toArray();
+
+    const results: ChatMessage[] = docs.map((doc) => ({
+      id: doc._id.toString(),
+      threadId: doc.threadId,
+      role: doc.role,
+      parts: doc.parts,
+      metadata: doc.metadata,
+      createdAt: doc.created_at,
+    }));
+
     console.log(
       "✅ [MongoDB Chat Repository] selectMessagesByThreadId result:",
-      result.length,
+      results.length,
       "messages found",
     );
-    return result;
+    return results;
   },
 
   async selectThreadsByUserId(userId: string) {
@@ -83,15 +194,45 @@ export const mongoChatRepository: ChatRepository = {
       "🔍 [MongoDB Chat Repository] selectThreadsByUserId called with userId:",
       userId,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgChatRepository.selectThreadsByUserId(userId);
+
+    // Get current user email for consistency with agent repository
+    const userEmail = await getCurrentUserEmail();
+
+    const threadCollection = await getCollection(COLLECTIONS.CHAT_THREADS);
+    const messageCollection = await getCollection(COLLECTIONS.CHAT_MESSAGES);
+
+    // Get threads - query by user email instead of passed userId
+    const threadDocs = await threadCollection
+      .find({ userId: userEmail })
+      .sort({ updated_at: -1 })
+      .toArray();
+
+    // Get last message for each thread
+    const results = await Promise.all(
+      threadDocs.map(async (threadDoc) => {
+        const lastMessage = await messageCollection.findOne(
+          { threadId: threadDoc._id.toString() },
+          { sort: { created_at: -1 } },
+        );
+
+        return {
+          id: threadDoc._id.toString(),
+          title: threadDoc.title,
+          userId: threadDoc.userId,
+          createdAt: threadDoc.created_at,
+          lastMessageAt:
+            lastMessage?.created_at?.getTime() ||
+            threadDoc.created_at.getTime(),
+        };
+      }),
+    );
+
     console.log(
       "✅ [MongoDB Chat Repository] selectThreadsByUserId result:",
-      result.length,
+      results.length,
       "threads found",
     );
-    return result;
+    return results;
   },
 
   async updateThread(id: string, thread) {
@@ -101,18 +242,57 @@ export const mongoChatRepository: ChatRepository = {
       "thread:",
       thread,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgChatRepository.updateThread(id, thread);
-    console.log("✅ [MongoDB Chat Repository] updateThread result:", result);
-    return result;
+
+    const collection = await getCollection(COLLECTIONS.CHAT_THREADS);
+    const now = new Date();
+
+    const updateDoc: any = {
+      updated_at: now,
+    };
+
+    if (thread.title !== undefined) updateDoc.title = thread.title;
+    if (thread.userId !== undefined) {
+      // Get current user email for consistency
+      const userEmail = await getCurrentUserEmail();
+      updateDoc.userId = userEmail;
+    }
+
+    const result = await collection.findOneAndUpdate(
+      { threadId: id },
+      { $set: updateDoc },
+      { returnDocument: "after" },
+    );
+
+    if (!result) {
+      throw new Error(`Thread with id ${id} not found`);
+    }
+
+    const threadResult: ChatThread = {
+      id: result.threadId,
+      title: result.title,
+      userId: result.userId,
+      createdAt: result.created_at,
+    };
+
+    console.log(
+      "✅ [MongoDB Chat Repository] updateThread result:",
+      threadResult,
+    );
+    return threadResult;
   },
 
   async deleteThread(id: string): Promise<void> {
     console.log("🗑️ [MongoDB Chat Repository] deleteThread called with id:", id);
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    await pgChatRepository.deleteThread(id);
+
+    const threadCollection = await getCollection(COLLECTIONS.CHAT_THREADS);
+    const messageCollection = await getCollection(COLLECTIONS.CHAT_MESSAGES);
+
+    // Delete thread
+    await threadCollection.deleteOne({ threadId: id });
+
+    // Delete all messages in this thread
+    await messageCollection.deleteMany({ threadId: id });
+
     console.log("✅ [MongoDB Chat Repository] deleteThread completed");
   },
 
@@ -121,11 +301,46 @@ export const mongoChatRepository: ChatRepository = {
       "💾 [MongoDB Chat Repository] upsertThread called with thread:",
       thread,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgChatRepository.upsertThread(thread);
-    console.log("✅ [MongoDB Chat Repository] upsertThread result:", result);
-    return result;
+
+    // Get current user email for consistency with agent repository
+    const userEmail = await getCurrentUserEmail();
+
+    const collection = await getCollection(COLLECTIONS.CHAT_THREADS);
+    const now = new Date();
+
+    const threadDoc = {
+      title: thread.title,
+      userId: userEmail, // Use user email instead of internal UUID
+      created_at: now,
+      updated_at: now,
+    };
+
+    let result;
+    if (thread.id) {
+      // Update existing thread
+      result = await collection.findOneAndUpdate(
+        { threadId: thread.id },
+        { $set: threadDoc },
+        { returnDocument: "after" },
+      );
+    } else {
+      // Create new thread
+      const insertResult = await collection.insertOne(threadDoc);
+      result = await collection.findOne({ _id: insertResult.insertedId });
+    }
+
+    const threadResult: ChatThread = {
+      id: result.threadId,
+      title: result.title,
+      userId: userEmail, // Use user email instead of internal UUID
+      createdAt: result.created_at,
+    };
+
+    console.log(
+      "✅ [MongoDB Chat Repository] upsertThread result:",
+      threadResult,
+    );
+    return threadResult;
   },
 
   async insertMessage(
@@ -137,9 +352,29 @@ export const mongoChatRepository: ChatRepository = {
       "threadId:",
       message.threadId,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgChatRepository.insertMessage(message);
+
+    const collection = await getCollection(COLLECTIONS.CHAT_MESSAGES);
+    const now = new Date();
+
+    const messageDoc = {
+      threadId: message.threadId,
+      role: message.role,
+      parts: message.parts,
+      metadata: message.metadata,
+      created_at: now,
+    };
+
+    const insertResult = await collection.insertOne(messageDoc);
+
+    const result: ChatMessage = {
+      id: insertResult.insertedId.toString(),
+      threadId: message.threadId,
+      role: message.role,
+      parts: message.parts,
+      metadata: message.metadata,
+      createdAt: now,
+    };
+
     console.log("✅ [MongoDB Chat Repository] insertMessage result:", result);
     return result;
   },
@@ -153,11 +388,46 @@ export const mongoChatRepository: ChatRepository = {
       "threadId:",
       message.threadId,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgChatRepository.upsertMessage(message);
-    console.log("✅ [MongoDB Chat Repository] upsertMessage result:", result);
-    return result;
+
+    const collection = await getCollection(COLLECTIONS.CHAT_MESSAGES);
+    const now = new Date();
+
+    const messageDoc = {
+      threadId: message.threadId,
+      role: message.role,
+      parts: message.parts,
+      metadata: message.metadata,
+      created_at: now,
+    };
+
+    let result;
+    if (message.id && isValidObjectId(message.id)) {
+      // Update existing message
+      result = await collection.findOneAndUpdate(
+        { _id: new ObjectId(message.id) },
+        { $set: messageDoc },
+        { returnDocument: "after" },
+      );
+    } else {
+      // Create new message
+      const insertResult = await collection.insertOne(messageDoc);
+      result = await collection.findOne({ _id: insertResult.insertedId });
+    }
+
+    const messageResult: ChatMessage = {
+      id: result._id.toString(),
+      threadId: result.threadId,
+      role: result.role,
+      parts: result.parts,
+      metadata: result.metadata,
+      createdAt: result.created_at,
+    };
+
+    console.log(
+      "✅ [MongoDB Chat Repository] upsertMessage result:",
+      messageResult,
+    );
+    return messageResult;
   },
 
   async deleteMessagesByChatIdAfterTimestamp(messageId: string): Promise<void> {
@@ -165,9 +435,30 @@ export const mongoChatRepository: ChatRepository = {
       "🗑️ [MongoDB Chat Repository] deleteMessagesByChatIdAfterTimestamp called with messageId:",
       messageId,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    await pgChatRepository.deleteMessagesByChatIdAfterTimestamp(messageId);
+
+    const collection = await getCollection(COLLECTIONS.CHAT_MESSAGES);
+
+    if (!isValidObjectId(messageId)) {
+      console.log(
+        "✅ [MongoDB Chat Repository] deleteMessagesByChatIdAfterTimestamp: Invalid ObjectId",
+      );
+      return;
+    }
+
+    // First get the message to find its timestamp and threadId
+    const message = await collection.findOne({ _id: new ObjectId(messageId) });
+
+    if (!message) {
+      console.log("Message not found, nothing to delete");
+      return;
+    }
+
+    // Delete all messages in the same thread after this timestamp
+    await collection.deleteMany({
+      threadId: message.threadId,
+      created_at: { $gt: message.created_at },
+    });
+
     console.log(
       "✅ [MongoDB Chat Repository] deleteMessagesByChatIdAfterTimestamp completed",
     );
@@ -178,9 +469,25 @@ export const mongoChatRepository: ChatRepository = {
       "🗑️ [MongoDB Chat Repository] deleteAllThreads called with userId:",
       userId,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    await pgChatRepository.deleteAllThreads(userId);
+
+    const threadCollection = await getCollection(COLLECTIONS.CHAT_THREADS);
+    const messageCollection = await getCollection(COLLECTIONS.CHAT_MESSAGES);
+
+    // Get all thread IDs for this user (userId is now user email)
+    const threads = await threadCollection
+      .find({ userId: userId }, { projection: { _id: 1 } })
+      .toArray();
+
+    const threadIds = threads.map((t) => t._id.toString());
+
+    // Delete all threads
+    await threadCollection.deleteMany({ userId: userId });
+
+    // Delete all messages in these threads
+    if (threadIds.length > 0) {
+      await messageCollection.deleteMany({ threadId: { $in: threadIds } });
+    }
+
     console.log("✅ [MongoDB Chat Repository] deleteAllThreads completed");
   },
 
@@ -189,9 +496,11 @@ export const mongoChatRepository: ChatRepository = {
       "🗑️ [MongoDB Chat Repository] deleteUnarchivedThreads called with userId:",
       userId,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    await pgChatRepository.deleteUnarchivedThreads(userId);
+
+    // For now, this is the same as deleteAllThreads since we don't have archive status in MongoDB yet
+    // TODO: Implement archive status tracking
+    await this.deleteAllThreads(userId);
+
     console.log(
       "✅ [MongoDB Chat Repository] deleteUnarchivedThreads completed",
     );
@@ -205,14 +514,34 @@ export const mongoChatRepository: ChatRepository = {
       messages.length,
       "messages",
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgChatRepository.insertMessages(messages);
+
+    const collection = await getCollection(COLLECTIONS.CHAT_MESSAGES);
+    const now = new Date();
+
+    const messageDocs = messages.map((message) => ({
+      threadId: message.threadId,
+      role: message.role,
+      parts: message.parts,
+      metadata: message.metadata,
+      created_at: message.createdAt || now,
+    }));
+
+    const insertResult = await collection.insertMany(messageDocs);
+
+    const results: ChatMessage[] = messages.map((message, index) => ({
+      id: insertResult.insertedIds[index].toString(),
+      threadId: message.threadId,
+      role: message.role,
+      parts: message.parts,
+      metadata: message.metadata,
+      createdAt: message.createdAt || now,
+    }));
+
     console.log(
       "✅ [MongoDB Chat Repository] insertMessages result:",
-      result.length,
+      results.length,
       "messages inserted",
     );
-    return result;
+    return results;
   },
 };
