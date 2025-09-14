@@ -1,13 +1,13 @@
-import { pgMcpRepository } from "../../pg/repositories/mcp-repository.pg";
+import { getCollection, COLLECTIONS } from "../mongodb";
+import { ObjectId } from "mongodb";
+import { getCurrentUserEmail } from "../auth-utils";
 import type {
   MCPRepository,
   McpServerInsert,
   McpServerSelect,
 } from "app-types/mcp";
 
-// MongoDB MCP Repository - STUB IMPLEMENTATION
-// Currently delegates to PostgreSQL implementation
-// This allows incremental migration without breaking existing functionality
+// MongoDB MCP Repository Implementation
 export const mongoMcpRepository: MCPRepository = {
   async save(server: McpServerInsert): Promise<McpServerSelect> {
     console.log(
@@ -16,22 +16,82 @@ export const mongoMcpRepository: MCPRepository = {
       "id:",
       server.id,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgMcpRepository.save(server);
+
+    // Get current user information
+    const userEmail = await getCurrentUserEmail();
+
+    const collection = await getCollection(COLLECTIONS.MCP_SERVERS);
+
+    const now = new Date();
+
+    let result: McpServerSelect;
+
+    if (server.id) {
+      // Update existing document
+      const serverDoc = {
+        _id: new ObjectId(server.id),
+        name: server.name,
+        config: server.config,
+        enabled: true,
+        created_at: now,
+        updated_at: now,
+        created_by: userEmail,
+      };
+
+      await collection.replaceOne({ _id: new ObjectId(server.id) }, serverDoc, {
+        upsert: true,
+      });
+
+      result = {
+        id: server.id,
+        name: server.name,
+        config: server.config,
+      };
+    } else {
+      // Insert new document - let MongoDB generate _id
+      const serverDoc = {
+        name: server.name,
+        config: server.config,
+        enabled: true,
+        created_at: now,
+        updated_at: now,
+        created_by: userEmail,
+      };
+
+      const insertResult = await collection.insertOne(serverDoc);
+
+      result = {
+        id: insertResult.insertedId.toString(),
+        name: server.name,
+        config: server.config,
+      };
+    }
+
     console.log("✅ [MongoDB MCP Repository] save result:", result);
     return result;
   },
 
   async selectById(id: string): Promise<McpServerSelect | null> {
     console.log("🔍 [MongoDB MCP Repository] selectById called with id:", id);
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgMcpRepository.selectById(id);
-    console.log(
-      "✅ [MongoDB MCP Repository] selectById result:",
-      result ? "Server found" : "Server not found",
-    );
+
+    const collection = await getCollection(COLLECTIONS.MCP_SERVERS);
+
+    const doc = await collection.findOne({ _id: new ObjectId(id) });
+
+    if (!doc) {
+      console.log(
+        "✅ [MongoDB MCP Repository] selectById result: Server not found",
+      );
+      return null;
+    }
+
+    const result: McpServerSelect = {
+      id: doc._id.toString(),
+      name: doc.name,
+      config: doc.config,
+    };
+
+    console.log("✅ [MongoDB MCP Repository] selectById result: Server found");
     return result;
   },
 
@@ -40,35 +100,67 @@ export const mongoMcpRepository: MCPRepository = {
       "🔍 [MongoDB MCP Repository] selectByServerName called with name:",
       name,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgMcpRepository.selectByServerName(name);
+
+    const collection = await getCollection(COLLECTIONS.MCP_SERVERS);
+
+    const doc = await collection.findOne({ name: name });
+
+    if (!doc) {
+      console.log(
+        "✅ [MongoDB MCP Repository] selectByServerName result: Server not found",
+      );
+      return null;
+    }
+
+    const result: McpServerSelect = {
+      id: doc._id.toString(),
+      name: doc.name,
+      config: doc.config,
+    };
+
     console.log(
-      "✅ [MongoDB MCP Repository] selectByServerName result:",
-      result ? "Server found" : "Server not found",
+      "✅ [MongoDB MCP Repository] selectByServerName result: Server found",
     );
     return result;
   },
 
   async selectAll(): Promise<McpServerSelect[]> {
     console.log("📋 [MongoDB MCP Repository] selectAll called");
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgMcpRepository.selectAll();
+
+    const collection = await getCollection(COLLECTIONS.MCP_SERVERS);
+
+    const docs = await collection.find({}).toArray();
+
+    const results: McpServerSelect[] = docs.map((doc) => ({
+      id: doc._id.toString(),
+      name: doc.name,
+      config: doc.config,
+    }));
+
     console.log(
       "✅ [MongoDB MCP Repository] selectAll result:",
-      result.length,
+      results.length,
       "servers found",
     );
-    return result;
+    return results;
   },
 
   async deleteById(id: string): Promise<void> {
     console.log("🗑️ [MongoDB MCP Repository] deleteById called with id:", id);
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    await pgMcpRepository.deleteById(id);
-    console.log("✅ [MongoDB MCP Repository] deleteById completed");
+
+    // Get current user information for audit trail
+    const userEmail = await getCurrentUserEmail();
+
+    const collection = await getCollection(COLLECTIONS.MCP_SERVERS);
+
+    // Instead of hard delete, we could do soft delete by updating the document
+    // For now, keeping hard delete but logging the action
+    await collection.deleteOne({ _id: new ObjectId(id) });
+
+    console.log(
+      "✅ [MongoDB MCP Repository] deleteById completed by user:",
+      userEmail,
+    );
   },
 
   async existsByServerName(name: string): Promise<boolean> {
@@ -76,13 +168,69 @@ export const mongoMcpRepository: MCPRepository = {
       "🔍 [MongoDB MCP Repository] existsByServerName called with name:",
       name,
     );
-    // TODO: Implement MongoDB version
-    // For now, delegate to PostgreSQL
-    const result = await pgMcpRepository.existsByServerName(name);
+
+    const collection = await getCollection(COLLECTIONS.MCP_SERVERS);
+
+    const doc = await collection.findOne(
+      { name: name },
+      { projection: { _id: 1 } },
+    );
+    const result = !!doc;
+
     console.log(
       "✅ [MongoDB MCP Repository] existsByServerName result:",
       result,
     );
     return result;
+  },
+};
+
+// Additional methods for user-specific operations (not part of MCPRepository interface)
+export const mongoMcpRepositoryExtensions = {
+  async selectByCurrentUser(): Promise<McpServerSelect[]> {
+    console.log("👤 [MongoDB MCP Repository] selectByCurrentUser called");
+
+    const userEmail = await getCurrentUserEmail();
+    const collection = await getCollection(COLLECTIONS.MCP_SERVERS);
+
+    const docs = await collection.find({ created_by: userEmail }).toArray();
+
+    const results: McpServerSelect[] = docs.map((doc) => ({
+      id: doc._id.toString(),
+      name: doc.name,
+      config: doc.config,
+    }));
+
+    console.log(
+      "✅ [MongoDB MCP Repository] selectByCurrentUser result:",
+      results.length,
+      "servers found for current user",
+    );
+    return results;
+  },
+
+  async selectByUserEmail(email: string): Promise<McpServerSelect[]> {
+    console.log(
+      "📧 [MongoDB MCP Repository] selectByUserEmail called with email:",
+      email,
+    );
+
+    const collection = await getCollection(COLLECTIONS.MCP_SERVERS);
+
+    const docs = await collection.find({ created_by: email }).toArray();
+
+    const results: McpServerSelect[] = docs.map((doc) => ({
+      id: doc._id.toString(),
+      name: doc.name,
+      config: doc.config,
+    }));
+
+    console.log(
+      "✅ [MongoDB MCP Repository] selectByUserEmail result:",
+      results.length,
+      "servers found for email:",
+      email,
+    );
+    return results;
   },
 };

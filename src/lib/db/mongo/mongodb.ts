@@ -1,5 +1,22 @@
-import { MongoClient } from "mongodb";
+import { MongoClient, Collection, Document } from "mongodb";
 import { auth } from "@clerk/nextjs/server";
+
+// Collection names constants
+export const COLLECTIONS = {
+  MCP_SERVERS: "mcp-servers",
+  // Add other collection names here as needed
+  // CHATS: "chats",
+  // USERS: "users",
+} as const;
+
+// Helper function to get a collection
+export const getCollection = async <T extends Document = Document>(
+  collectionName: string,
+): Promise<Collection<T>> => {
+  const { client, databaseName } = await connectToDatabase();
+  const db = client.db(databaseName);
+  return db.collection<T>(collectionName);
+};
 
 const connectToDatabase = async () => {
   // Get the current user's organization from Clerk
@@ -38,3 +55,6 @@ const connectToDatabase = async () => {
 };
 
 export default connectToDatabase;
+
+// Re-export auth utilities for convenience
+export * from "./auth-utils";
