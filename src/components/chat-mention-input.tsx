@@ -471,8 +471,8 @@ export function ChatMentionInputSuggestion({
     const groups = {
       agent: { title: "Agents", items: [] as MentionItemType[] },
       workflow: { title: "Workflows", items: [] as MentionItemType[] },
-      defaultTool: { title: "App Tools", items: [] as MentionItemType[] },
-      mcp: { title: "MCP Tools", items: [] as MentionItemType[] },
+      defaultTool: { title: "Built-in Tools", items: [] as MentionItemType[] },
+      mcp: { title: "Applications", items: [] as MentionItemType[] },
       mcpTool: { title: "MCP Tools", items: [] as MentionItemType[] },
     };
 
