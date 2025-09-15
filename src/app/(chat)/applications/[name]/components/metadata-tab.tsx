@@ -26,11 +26,11 @@ import {
   Search,
   Loader2,
   AlertCircle,
-  Database,
   MoreVertical,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { MCPIcon } from "@/components/ui/mcp-icon";
 import { useApigeneApi } from "@/lib/api/apigene-client";
 import { MetadataDetailsModal } from "./metadata-details-modal";
 
@@ -256,7 +256,7 @@ export function MetadataTab({ application }: MetadataTabProps) {
           {filteredMetadata.length === 0 ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center py-8">
-                <Database className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <MCPIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <h3 className="text-lg font-medium mb-2">
                   {searchTerm
                     ? "No matching operations found"
@@ -283,7 +283,7 @@ export function MetadataTab({ application }: MetadataTabProps) {
                               Rating
                             </TableHead>
                             <TableHead className="text-center">
-                              Operation ID
+                              Tool Name
                             </TableHead>
                             <TableHead className="text-center">
                               Description

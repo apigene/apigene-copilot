@@ -19,7 +19,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Save, X, Loader2, Database, Edit3 } from "lucide-react";
+import { Save, X, Loader2, Edit3 } from "lucide-react";
+import { MCPIcon } from "@/components/ui/mcp-icon";
 import { toast } from "sonner";
 import { useApigeneApi } from "@/lib/api/apigene-client";
 
@@ -276,8 +277,8 @@ export function MetadataDetailsModal({
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5" />
-              {operation.operationId} - Metadata Details
+              <MCPIcon className="h-5 w-5" />
+              {operation.operationId}
             </DialogTitle>
             <Button
               variant="outline"

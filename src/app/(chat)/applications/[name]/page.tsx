@@ -15,10 +15,10 @@ import {
   Circle,
   Settings,
   Shield,
-  Cog,
-  Database,
+  CodeIcon,
   Layers,
 } from "lucide-react";
+import { MCPIcon } from "@/components/ui/mcp-icon";
 import { GeneralTab } from "./components/general-tab";
 import { SecurityTab } from "./components/security-tab";
 import { MetadataTab } from "./components/metadata-tab";
@@ -204,12 +204,12 @@ export default function ApplicationEditPage() {
             )}
           </TabsTrigger>
           <TabsTrigger value="operations" className="flex items-center gap-2">
-            <Cog className="h-4 w-4" />
-            Operations
+            <CodeIcon className="h-4 w-4" />
+            API Operations
           </TabsTrigger>
           <TabsTrigger value="metadata" className="flex items-center gap-2">
-            <Database className="h-4 w-4" />
-            Agentic Metadata
+            <MCPIcon className="h-4 w-4" />
+            MCP Tools
           </TabsTrigger>
           <TabsTrigger
             value="common-parameters"
