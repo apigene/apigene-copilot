@@ -14,7 +14,9 @@ export const FILE_BASED_MCP_CONFIG =
   process.env.FILE_BASED_MCP_CONFIG === "true";
 
 export const SHOW_ARCHIVE = false;
-
+export const SHOW_PRESET = false;
+export const SHOW_AGENT = false;
+export const SHOW_WORKFLOW = false;
 export const COOKIE_KEY_SIDEBAR_STATE = "sidebar:state";
 export const COOKIE_KEY_LOCALE = "i18n:locale";
 

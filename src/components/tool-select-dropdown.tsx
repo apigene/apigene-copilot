@@ -1,6 +1,7 @@
 import { appStore } from "@/app/store";
 import { AllowedMCPServer, MCPServerInfo } from "app-types/mcp";
 import { cn, objectFlow } from "lib/utils";
+import { SHOW_PRESET, SHOW_AGENT, SHOW_WORKFLOW } from "lib/const";
 import {
   ArrowUpRightIcon,
   AtSign,
@@ -226,19 +227,31 @@ export function ToolSelectDropdown({
         </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="md:w-72" align={align} side={side}>
-        <WorkflowToolSelector onSelectWorkflow={onSelectWorkflow} />
-        <div className="py-1">
-          <DropdownMenuSeparator />
-        </div>
-        <AgentSelector onSelectAgent={onSelectAgent} />
-        <div className="py-1">
-          <DropdownMenuSeparator />
-        </div>
+        {SHOW_WORKFLOW && (
+          <>
+            <WorkflowToolSelector onSelectWorkflow={onSelectWorkflow} />
+            <div className="py-1">
+              <DropdownMenuSeparator />
+            </div>
+          </>
+        )}
+        {SHOW_AGENT && (
+          <>
+            <AgentSelector onSelectAgent={onSelectAgent} />
+            <div className="py-1">
+              <DropdownMenuSeparator />
+            </div>
+          </>
+        )}
         <div className="py-2">
-          <ToolPresets />
-          <div className="py-1">
-            <DropdownMenuSeparator />
-          </div>
+          {SHOW_PRESET && (
+            <>
+              <ToolPresets />
+              <div className="py-1">
+                <DropdownMenuSeparator />
+              </div>
+            </>
+          )}
           <AppDefaultToolKitSelector />
           <div className="py-1">
             <DropdownMenuSeparator />

@@ -26,7 +26,7 @@ import { DefaultToolName } from "lib/ai/tools";
 import { Tooltip, TooltipContent, TooltipTrigger } from "ui/tooltip";
 import { DefaultToolIcon } from "./default-tool-icon";
 import equal from "lib/equal";
-import { EMOJI_DATA } from "lib/const";
+import { EMOJI_DATA, SHOW_AGENT, SHOW_WORKFLOW } from "lib/const";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 type MentionItemType = {
@@ -256,6 +256,7 @@ export function ChatMentionInputSuggestion({
   }, [mcpList, selectedIds, disabledType, searchValue]);
 
   const agentMentions = useMemo(() => {
+    if (!SHOW_AGENT) return [];
     if (disabledType?.includes("agent")) return [];
     if (!agentList.length) return [];
 
@@ -301,6 +302,7 @@ export function ChatMentionInputSuggestion({
   }, [agentList, selectedIds, disabledType, searchValue]);
 
   const workflowMentions = useMemo(() => {
+    if (!SHOW_WORKFLOW) return [];
     if (disabledType?.includes("workflow")) return [];
     if (!workflowList.length) return [];
 
@@ -542,7 +544,12 @@ export function ChatMentionInputSuggestion({
                   const currentItem = allMentions[selectedIndex];
                   const currentType =
                     currentItem.type === "mcpTool" ? "mcp" : currentItem.type;
-                  const typeOrder = ["agent", "workflow", "mcp", "defaultTool"];
+                  const typeOrder = [
+                    ...(SHOW_AGENT ? ["agent"] : []),
+                    ...(SHOW_WORKFLOW ? ["workflow"] : []),
+                    "mcp",
+                    "defaultTool",
+                  ];
                   const currentTypeIndex = typeOrder.indexOf(currentType);
 
                   if (e.key === "ArrowLeft" && currentTypeIndex > 0) {
@@ -599,7 +606,7 @@ export function ChatMentionInputSuggestion({
             ) : isMobile ? (
               // Mobile vertical layout
               <div className="overflow-y-auto max-h-[50vh]">
-                {groupedMentions.agent.items.length > 0 && (
+                {SHOW_AGENT && groupedMentions.agent.items.length > 0 && (
                   <div className="p-2">
                     <div className="text-xs font-medium text-muted-foreground px-2 py-1.5">
                       {groupedMentions.agent.title}
@@ -620,7 +627,7 @@ export function ChatMentionInputSuggestion({
                     </div>
                   </div>
                 )}
-                {groupedMentions.workflow.items.length > 0 && (
+                {SHOW_WORKFLOW && groupedMentions.workflow.items.length > 0 && (
                   <div className="p-2 border-t">
                     <div className="text-xs font-medium text-muted-foreground px-2 py-1.5">
                       {groupedMentions.workflow.title}
@@ -688,58 +695,64 @@ export function ChatMentionInputSuggestion({
               // Desktop horizontal layout
               <div className="flex flex-1 h-[300px]">
                 {/* Agents & Workflows Column */}
-                <div className="flex-1 border-r overflow-y-auto">
-                  <div className="p-2">
-                    <div className="text-xs font-medium text-muted-foreground px-2 py-1.5">
-                      {groupedMentions.agent.title}
-                    </div>
-                    <div className="space-y-1">
-                      {groupedMentions.agent.items.length > 0 ? (
-                        groupedMentions.agent.items.map((item) => (
-                          <MentionItem
-                            key={item.id}
-                            item={item}
-                            isSelected={
-                              allMentions[selectedIndex]?.id === item.id
-                            }
-                            ref={(el) => {
-                              itemRefs.current[item.id] = el;
-                            }}
-                          />
-                        ))
-                      ) : (
-                        <div className="px-2 py-3 text-xs text-muted-foreground text-center">
-                          No agents found
+                {(SHOW_AGENT || SHOW_WORKFLOW) && (
+                  <div className="flex-1 border-r overflow-y-auto">
+                    {SHOW_AGENT && (
+                      <div className="p-2">
+                        <div className="text-xs font-medium text-muted-foreground px-2 py-1.5">
+                          {groupedMentions.agent.title}
                         </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="p-2 border-t">
-                    <div className="text-xs font-medium text-muted-foreground px-2 py-1.5">
-                      {groupedMentions.workflow.title}
-                    </div>
-                    <div className="space-y-1">
-                      {groupedMentions.workflow.items.length > 0 ? (
-                        groupedMentions.workflow.items.map((item) => (
-                          <MentionItem
-                            key={item.id}
-                            item={item}
-                            isSelected={
-                              allMentions[selectedIndex]?.id === item.id
-                            }
-                            ref={(el) => {
-                              itemRefs.current[item.id] = el;
-                            }}
-                          />
-                        ))
-                      ) : (
-                        <div className="px-2 py-3 text-xs text-muted-foreground text-center">
-                          No workflows found
+                        <div className="space-y-1">
+                          {groupedMentions.agent.items.length > 0 ? (
+                            groupedMentions.agent.items.map((item) => (
+                              <MentionItem
+                                key={item.id}
+                                item={item}
+                                isSelected={
+                                  allMentions[selectedIndex]?.id === item.id
+                                }
+                                ref={(el) => {
+                                  itemRefs.current[item.id] = el;
+                                }}
+                              />
+                            ))
+                          ) : (
+                            <div className="px-2 py-3 text-xs text-muted-foreground text-center">
+                              No agents found
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
+                    {SHOW_WORKFLOW && (
+                      <div className="p-2 border-t">
+                        <div className="text-xs font-medium text-muted-foreground px-2 py-1.5">
+                          {groupedMentions.workflow.title}
+                        </div>
+                        <div className="space-y-1">
+                          {groupedMentions.workflow.items.length > 0 ? (
+                            groupedMentions.workflow.items.map((item) => (
+                              <MentionItem
+                                key={item.id}
+                                item={item}
+                                isSelected={
+                                  allMentions[selectedIndex]?.id === item.id
+                                }
+                                ref={(el) => {
+                                  itemRefs.current[item.id] = el;
+                                }}
+                              />
+                            ))
+                          ) : (
+                            <div className="px-2 py-3 text-xs text-muted-foreground text-center">
+                              No workflows found
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
+                )}
 
                 {/* MCP Tools Column */}
                 <div className="flex-1 border-r overflow-y-auto">
