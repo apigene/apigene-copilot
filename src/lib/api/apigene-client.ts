@@ -179,24 +179,7 @@ export class ApigeneClient {
     const headers = await this.buildHeaders(customHeaders, body);
 
     // Log before making the request
-    console.log(`Request >> ${method}: ${url}`, {
-      endpoint,
-      method,
-      queryParams,
-      body: body instanceof FormData ? "FormData" : body,
-      headers: Object.keys(headers).reduce(
-        (acc, key) => {
-          // Don't log sensitive headers
-          if (key.toLowerCase() === "authorization") {
-            acc[key] = "[REDACTED]";
-          } else {
-            acc[key] = headers[key];
-          }
-          return acc;
-        },
-        {} as Record<string, string>,
-      ),
-    });
+    console.log(`Request >> ${method}: ${url}`);
 
     try {
       const response = await fetch(url, {
@@ -471,6 +454,7 @@ export function useApigeneApi() {
       url: string;
       global_spec?: boolean;
       shared_security_info?: boolean;
+      create_mcp?: boolean;
     }) => {
       return client.post("/api/spec_from_url/", data, {
         headers: {
@@ -486,9 +470,13 @@ export function useApigeneApi() {
       file: File;
       global_spec?: boolean;
       shared_security_info?: boolean;
+      create_mcp?: boolean;
     }) => {
       const formData = customFormData(data);
-
+      console.log(
+        "🔥 HOT RELOAD TEST - specCreateFromFile() with formData:",
+        formData,
+      );
       const response = await client.request({
         endpoint: "/api/spec_from_file/",
         method: "POST",

@@ -109,6 +109,7 @@ const InstallApplicationDialog: React.FC<InstallApplicationDialogProps> = ({
           url: url.trim(),
           global_spec: false,
           shared_security_info: false,
+          create_mcp: true,
         });
       } else {
         // Install from file
@@ -122,6 +123,7 @@ const InstallApplicationDialog: React.FC<InstallApplicationDialogProps> = ({
           file,
           global_spec: false,
           shared_security_info: false,
+          create_mcp: true,
         });
       }
 
