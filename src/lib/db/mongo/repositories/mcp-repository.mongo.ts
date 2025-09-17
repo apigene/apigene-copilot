@@ -50,8 +50,8 @@ export const mongoMcpRepository: MCPRepository = {
           name: server.name,
           config: server.config,
           enabled: true,
-          server_type: "apigene", // Default to apigene type
-          icon_url: "apigene.ai", // Required field for backend
+          server_type: "public",
+          icon_url: "apigene.ai",
         };
 
         console.log(

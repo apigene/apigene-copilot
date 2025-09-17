@@ -8,7 +8,7 @@ import { z } from "zod";
 
 export const MCPRemoteConfigZodSchema = z.object({
   url: z.string().url().describe("The URL of the SSE endpoint"),
-  headers: z.record(z.string(), z.string()).optional(),
+  headers: z.record(z.string(), z.string()).optional().nullable(),
 });
 
 export const MCPStdioConfigZodSchema = z.object({

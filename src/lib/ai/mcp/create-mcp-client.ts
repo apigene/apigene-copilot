@@ -125,7 +125,11 @@ export class MCPClient {
       return false;
     }
     const config = MCPRemoteConfigZodSchema.parse(this.serverConfig);
-    return !!(config.headers && "apigene-api-key" in config.headers);
+    return !!(
+      config.headers &&
+      typeof config.headers === "object" &&
+      "apigene-api-key" in config.headers
+    );
   }
 
   private async getApigeneToken(): Promise<string | null> {
@@ -253,7 +257,7 @@ export class MCPClient {
 
         // Check if this is an Apigene server and get user session token
         const isApigene = await this.isApigeneServer();
-        const headers = { ...config.headers };
+        const headers = { ...(config.headers || {}) };
 
         if (isApigene) {
           const userToken = await this.getApigeneToken();
