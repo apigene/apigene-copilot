@@ -1,4 +1,3 @@
-import "server-only";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { mapClerkUserIdToUuid } from "./user-mapping";
 

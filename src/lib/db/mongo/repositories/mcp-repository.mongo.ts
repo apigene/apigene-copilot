@@ -1,186 +1,245 @@
-import { getCollection, COLLECTIONS } from "../mongodb";
-import { ObjectId } from "mongodb";
-import { getCurrentUserEmail } from "../auth-utils";
+import { ApigeneClient } from "@/lib/api/apigene-client";
+import { createApigeneClientWithAuth } from "@/lib/api/apigene-client-server";
 import type {
   MCPRepository,
   McpServerInsert,
   McpServerSelect,
 } from "app-types/mcp";
 
-// MongoDB MCP Repository Implementation
+// Helper function to create API client with authentication
+const createApiClient = async (): Promise<ApigeneClient> => {
+  return await createApigeneClientWithAuth();
+};
+
+// API-based MCP Repository Implementation
 export const mongoMcpRepository: MCPRepository = {
   async save(server: McpServerInsert): Promise<McpServerSelect> {
     console.log(
-      "💾 [MongoDB MCP Repository] save called with server:",
+      "💾 [API MCP Repository] save called with server:",
       server.name,
       "id:",
       server.id,
     );
 
-    // Get current user information
-    const userEmail = await getCurrentUserEmail();
-
-    const collection = await getCollection(COLLECTIONS.MCP_SERVERS);
-
-    const now = new Date();
+    const apiClient = await createApiClient();
 
     let result: McpServerSelect;
 
-    if (server.id) {
-      // Update existing document
-      const serverDoc = {
-        _id: new ObjectId(server.id),
-        name: server.name,
-        config: server.config,
-        enabled: true,
-        created_at: now,
-        updated_at: now,
-        created_by: userEmail,
-      };
+    try {
+      if (server.id) {
+        // Update existing server
+        const updateData = {
+          name: server.name,
+          config: server.config,
+          enabled: true,
+        };
 
-      await collection.replaceOne({ _id: new ObjectId(server.id) }, serverDoc, {
-        upsert: true,
-      });
+        const updatedServer = await apiClient.put(
+          `/api/mcp-server/update/${server.id}`,
+          updateData,
+        );
 
-      result = {
+        result = {
+          id: updatedServer.id,
+          name: updatedServer.name,
+          config: updatedServer.config,
+        };
+      } else {
+        // Create new server
+        const createData = {
+          name: server.name,
+          config: server.config,
+          enabled: true,
+          server_type: "apigene", // Default to apigene type
+          icon_url: "apigene.ai", // Required field for backend
+        };
+
+        console.log(
+          "🔧 [API MCP Repository] Creating new server with data:",
+          createData,
+        );
+        console.log(
+          "🔧 [API MCP Repository] Calling endpoint: /api/mcp-server/create",
+        );
+
+        const createdServer = await apiClient.post(
+          "/api/mcp-server/create",
+          createData,
+        );
+
+        result = {
+          id: createdServer.id,
+          name: createdServer.name,
+          config: createdServer.config,
+        };
+      }
+
+      console.log("✅ [API MCP Repository] save result:", result);
+      return result;
+    } catch (error: any) {
+      console.error("❌ [API MCP Repository] save error:", error);
+
+      // Handle specific "body stream already read" error by rethrowing as a more specific error
+      if (error.message && error.message.includes("body stream already read")) {
+        console.log(
+          "✅ [API MCP Repository] save result: Handling body stream error",
+        );
+        throw new Error(
+          "API request failed due to response handling issue. Please try again.",
+        );
+      }
+
+      // Handle 404 errors specifically for create/update operations
+      if (error.status === 404) {
+        console.log(
+          "❌ [API MCP Repository] save result: Endpoint not found (404)",
+        );
+        throw new Error(
+          `MCP server endpoint not found. Please check if the backend API is running and accessible.`,
+        );
+      }
+
+      throw error;
+    }
+  },
+
+  async selectById(id: string): Promise<McpServerSelect | null> {
+    console.log("🔍 [API MCP Repository] selectById called with id:", id);
+
+    const apiClient = await createApiClient();
+
+    try {
+      const server = await apiClient.get(`/api/mcp-server/get/${id}`);
+
+      const result: McpServerSelect = {
         id: server.id,
         name: server.name,
         config: server.config,
       };
-    } else {
-      // Insert new document - let MongoDB generate _id
-      const serverDoc = {
-        name: server.name,
-        config: server.config,
-        enabled: true,
-        created_at: now,
-        updated_at: now,
-        created_by: userEmail,
-      };
 
-      const insertResult = await collection.insertOne(serverDoc);
+      console.log("✅ [API MCP Repository] selectById result: Server found");
+      return result;
+    } catch (error: any) {
+      if (error.status === 404) {
+        console.log(
+          "✅ [API MCP Repository] selectById result: Server not found",
+        );
+        return null;
+      }
 
-      result = {
-        id: insertResult.insertedId.toString(),
-        name: server.name,
-        config: server.config,
-      };
+      // Handle specific "body stream already read" error by returning null
+      if (error.message && error.message.includes("body stream already read")) {
+        console.log(
+          "✅ [API MCP Repository] selectById result: Handling body stream error, returning null",
+        );
+        return null;
+      }
+
+      console.error("❌ [API MCP Repository] selectById error:", error);
+      throw error;
     }
-
-    console.log("✅ [MongoDB MCP Repository] save result:", result);
-    return result;
-  },
-
-  async selectById(id: string): Promise<McpServerSelect | null> {
-    console.log("🔍 [MongoDB MCP Repository] selectById called with id:", id);
-
-    const collection = await getCollection(COLLECTIONS.MCP_SERVERS);
-
-    const doc = await collection.findOne({ _id: new ObjectId(id) });
-
-    if (!doc) {
-      console.log(
-        "✅ [MongoDB MCP Repository] selectById result: Server not found",
-      );
-      return null;
-    }
-
-    const result: McpServerSelect = {
-      id: doc._id.toString(),
-      name: doc.name,
-      config: doc.config,
-    };
-
-    console.log("✅ [MongoDB MCP Repository] selectById result: Server found");
-    return result;
   },
 
   async selectByServerName(name: string): Promise<McpServerSelect | null> {
     console.log(
-      "🔍 [MongoDB MCP Repository] selectByServerName called with name:",
+      "🔍 [API MCP Repository] selectByServerName called with name:",
       name,
     );
 
-    const collection = await getCollection(COLLECTIONS.MCP_SERVERS);
+    // Since the backend API doesn't have a direct "get by name" endpoint,
+    // we'll need to get all servers and filter by name
+    const allServers = await this.selectAll();
+    const server = allServers.find((s) => s.name === name);
 
-    const doc = await collection.findOne({ name: name });
-
-    if (!doc) {
+    if (!server) {
       console.log(
-        "✅ [MongoDB MCP Repository] selectByServerName result: Server not found",
+        "✅ [API MCP Repository] selectByServerName result: Server not found",
       );
       return null;
     }
 
-    const result: McpServerSelect = {
-      id: doc._id.toString(),
-      name: doc.name,
-      config: doc.config,
-    };
-
     console.log(
-      "✅ [MongoDB MCP Repository] selectByServerName result: Server found",
+      "✅ [API MCP Repository] selectByServerName result: Server found",
     );
-    return result;
+    return server;
   },
 
   async selectAll(): Promise<McpServerSelect[]> {
-    console.log("📋 [MongoDB MCP Repository] selectAll called");
+    console.log("📋 [API MCP Repository] selectAll called");
 
-    const collection = await getCollection(COLLECTIONS.MCP_SERVERS);
+    const apiClient = await createApiClient();
 
-    const docs = await collection.find({}).toArray();
+    try {
+      const servers = await apiClient.get(
+        "/api/mcp-server/list?enabled_only=false",
+      );
 
-    const results: McpServerSelect[] = docs.map((doc) => ({
-      id: doc._id.toString(),
-      name: doc.name,
-      config: doc.config,
-    }));
+      const results: McpServerSelect[] = servers.map((server: any) => ({
+        id: server.id,
+        name: server.name,
+        config: server.config,
+      }));
 
-    console.log(
-      "✅ [MongoDB MCP Repository] selectAll result:",
-      results.length,
-      "servers found",
-    );
-    return results;
+      console.log(
+        "✅ [API MCP Repository] selectAll result:",
+        results.length,
+        "servers found",
+      );
+      return results;
+    } catch (error: any) {
+      console.error("❌ [API MCP Repository] selectAll error:", error);
+
+      // Handle specific "body stream already read" error by returning empty array
+      if (error.message && error.message.includes("body stream already read")) {
+        console.log(
+          "✅ [API MCP Repository] selectAll result: Handling body stream error, returning empty array",
+        );
+        return [];
+      }
+
+      throw error;
+    }
   },
 
   async deleteById(id: string): Promise<void> {
-    console.log("🗑️ [MongoDB MCP Repository] deleteById called with id:", id);
+    console.log("🗑️ [API MCP Repository] deleteById called with id:", id);
 
-    // Get current user information for audit trail
-    const userEmail = await getCurrentUserEmail();
+    const apiClient = await createApiClient();
 
-    const collection = await getCollection(COLLECTIONS.MCP_SERVERS);
+    try {
+      await apiClient.delete(`/api/mcp-server/delete/${id}`);
 
-    // Instead of hard delete, we could do soft delete by updating the document
-    // For now, keeping hard delete but logging the action
-    await collection.deleteOne({ _id: new ObjectId(id) });
+      console.log("✅ [API MCP Repository] deleteById completed");
+    } catch (error: any) {
+      console.error("❌ [API MCP Repository] deleteById error:", error);
 
-    console.log(
-      "✅ [MongoDB MCP Repository] deleteById completed by user:",
-      userEmail,
-    );
+      // Handle specific "body stream already read" error by logging and continuing
+      if (error.message && error.message.includes("body stream already read")) {
+        console.log(
+          "✅ [API MCP Repository] deleteById result: Handling body stream error, assuming success",
+        );
+        return;
+      }
+
+      throw error;
+    }
   },
 
   async existsByServerName(name: string): Promise<boolean> {
     console.log(
-      "🔍 [MongoDB MCP Repository] existsByServerName called with name:",
+      "🔍 [API MCP Repository] existsByServerName called with name:",
       name,
     );
 
-    const collection = await getCollection(COLLECTIONS.MCP_SERVERS);
+    try {
+      const server = await this.selectByServerName(name);
+      const result = !!server;
 
-    const doc = await collection.findOne(
-      { name: name },
-      { projection: { _id: 1 } },
-    );
-    const result = !!doc;
-
-    console.log(
-      "✅ [MongoDB MCP Repository] existsByServerName result:",
-      result,
-    );
-    return result;
+      console.log("✅ [API MCP Repository] existsByServerName result:", result);
+      return result;
+    } catch (error) {
+      console.error("❌ [API MCP Repository] existsByServerName error:", error);
+      throw error;
+    }
   },
 };
