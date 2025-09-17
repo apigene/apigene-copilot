@@ -51,11 +51,15 @@ const connectToDatabase = async () => {
     };
 
     if (!globalWithMongo._mongoClient) {
-      globalWithMongo._mongoClient = new MongoClient(MONGO_DB_URL);
+      globalWithMongo._mongoClient = new MongoClient(MONGO_DB_URL, {
+        ignoreUndefined: true, // This prevents MongoDB from saving undefined values as null
+      });
     }
     client = globalWithMongo._mongoClient;
   } else {
-    client = new MongoClient(MONGO_DB_URL);
+    client = new MongoClient(MONGO_DB_URL, {
+      ignoreUndefined: true, // This prevents MongoDB from saving undefined values as null
+    });
   }
 
   // Construct database name using orgId
