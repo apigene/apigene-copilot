@@ -55,7 +55,7 @@ export const mongoChatRepository: ChatRepository = {
     thread: Omit<ChatThread, "createdAt">,
   ): Promise<ChatThread> {
     console.log(
-      "➕ [MongoDB Chat Repository] insertThread called with thread:",
+      "[Chat Repo] insertThread called with thread:",
       thread.title,
       "userId:",
       thread.userId,
@@ -86,24 +86,19 @@ export const mongoChatRepository: ChatRepository = {
       createdAt: now,
     };
 
-    console.log("✅ [MongoDB Chat Repository] insertThread result:", result);
+    console.log("[Chat Repo] insertThread result:", result);
     return result;
   },
 
   async selectThread(id: string): Promise<ChatThread | null> {
-    console.log(
-      "🔍 [MongoDB Chat Repository] selectThread called with id:",
-      id,
-    );
+    console.log("[Chat Repo] selectThread called with id:", id);
 
     const collection = await getCollection(COLLECTIONS.CHAT_THREADS);
 
     const doc = await collection.findOne({ threadId: id });
 
     if (!doc) {
-      console.log(
-        "✅ [MongoDB Chat Repository] selectThread result: Thread not found",
-      );
+      console.log("[Chat Repo] selectThread result: Thread not found");
       return null;
     }
 
@@ -114,37 +109,27 @@ export const mongoChatRepository: ChatRepository = {
       createdAt: doc.created_at,
     };
 
-    console.log(
-      "✅ [MongoDB Chat Repository] selectThread result: Thread found",
-    );
+    console.log("[Chat Repo] selectThread result: Thread found");
     return result;
   },
 
   async deleteChatMessage(id: string): Promise<void> {
-    console.log(
-      "🗑️ [MongoDB Chat Repository] deleteChatMessage called with id:",
-      id,
-    );
+    console.log("[Chat Repo] deleteChatMessage called with id:", id);
 
     const collection = await getCollection(COLLECTIONS.CHAT_MESSAGES);
 
     if (!isValidObjectId(id)) {
-      console.log(
-        "✅ [MongoDB Chat Repository] deleteChatMessage: Invalid ObjectId",
-      );
+      console.log("[Chat Repo] deleteChatMessage: Invalid ObjectId");
       return;
     }
 
     await collection.deleteOne({ _id: new ObjectId(id) });
 
-    console.log("✅ [MongoDB Chat Repository] deleteChatMessage completed");
+    console.log("[Chat Repo] deleteChatMessage completed");
   },
 
   async selectThreadDetails(id: string) {
-    console.log(
-      "🔍 [MongoDB Chat Repository] selectThreadDetails called with id:",
-      id,
-    );
+    console.log("[Chat Repo] selectThreadDetails called with id:", id);
 
     const threadCollection = await getCollection(COLLECTIONS.CHAT_THREADS);
     const messageCollection = await getCollection(COLLECTIONS.CHAT_MESSAGES);
@@ -154,9 +139,7 @@ export const mongoChatRepository: ChatRepository = {
     const threadDoc = await threadCollection.findOne({ threadId: id });
 
     if (!threadDoc) {
-      console.log(
-        "✅ [MongoDB Chat Repository] selectThreadDetails result: Thread not found",
-      );
+      console.log("[Chat Repo] selectThreadDetails result: Thread not found");
       return null;
     }
 
@@ -187,7 +170,7 @@ export const mongoChatRepository: ChatRepository = {
       threadId: doc.threadId,
       role: doc.role,
       parts: doc.parts,
-      metadata: doc.metadata,
+      metadata: doc.metadata || undefined,
       createdAt: doc.created_at,
     }));
 
@@ -197,15 +180,13 @@ export const mongoChatRepository: ChatRepository = {
       userPreferences: userDoc?.preferences,
     };
 
-    console.log(
-      "✅ [MongoDB Chat Repository] selectThreadDetails result: Thread details found",
-    );
+    console.log("[Chat Repo] selectThreadDetails result: Thread details found");
     return result;
   },
 
   async selectMessagesByThreadId(threadId: string): Promise<ChatMessage[]> {
     console.log(
-      "🔍 [MongoDB Chat Repository] selectMessagesByThreadId called with threadId:",
+      "[Chat Repo] selectMessagesByThreadId called with threadId:",
       threadId,
     );
 
@@ -221,12 +202,12 @@ export const mongoChatRepository: ChatRepository = {
       threadId: doc.threadId,
       role: doc.role,
       parts: doc.parts,
-      metadata: doc.metadata,
+      metadata: doc.metadata || undefined,
       createdAt: doc.created_at,
     }));
 
     console.log(
-      "✅ [MongoDB Chat Repository] selectMessagesByThreadId result:",
+      "[Chat Repo] selectMessagesByThreadId result:",
       results.length,
       "messages found",
     );
@@ -235,7 +216,7 @@ export const mongoChatRepository: ChatRepository = {
 
   async selectThreadsByUserId(userId: string) {
     console.log(
-      "🔍 [MongoDB Chat Repository] selectThreadsByUserId called with userId:",
+      "[Chat Repo] selectThreadsByUserId called with userId:",
       userId,
     );
 
@@ -272,7 +253,7 @@ export const mongoChatRepository: ChatRepository = {
     );
 
     console.log(
-      "✅ [MongoDB Chat Repository] selectThreadsByUserId result:",
+      "[Chat Repo] selectThreadsByUserId result:",
       results.length,
       "threads found",
     );
@@ -281,7 +262,7 @@ export const mongoChatRepository: ChatRepository = {
 
   async updateThread(id: string, thread) {
     console.log(
-      "✏️ [MongoDB Chat Repository] updateThread called with id:",
+      "[Chat Repo] updateThread called with id:",
       id,
       "thread:",
       thread,
@@ -318,15 +299,12 @@ export const mongoChatRepository: ChatRepository = {
       createdAt: result.created_at,
     };
 
-    console.log(
-      "✅ [MongoDB Chat Repository] updateThread result:",
-      threadResult,
-    );
+    console.log("[Chat Repo] updateThread result:", threadResult);
     return threadResult;
   },
 
   async deleteThread(id: string): Promise<void> {
-    console.log("🗑️ [MongoDB Chat Repository] deleteThread called with id:", id);
+    console.log("[Chat Repo] deleteThread called with id:", id);
 
     const threadCollection = await getCollection(COLLECTIONS.CHAT_THREADS);
     const messageCollection = await getCollection(COLLECTIONS.CHAT_MESSAGES);
@@ -337,14 +315,11 @@ export const mongoChatRepository: ChatRepository = {
     // Delete all messages in this thread
     await messageCollection.deleteMany({ threadId: id });
 
-    console.log("✅ [MongoDB Chat Repository] deleteThread completed");
+    console.log("[Chat Repo] deleteThread completed");
   },
 
   async upsertThread(thread) {
-    console.log(
-      "💾 [MongoDB Chat Repository] upsertThread called with thread:",
-      thread,
-    );
+    console.log("[Chat Repo] upsertThread called with thread:", thread);
 
     // Get current user email for consistency with agent repository
     const userEmail = await getCurrentUserEmail();
@@ -380,10 +355,7 @@ export const mongoChatRepository: ChatRepository = {
       createdAt: result.created_at,
     };
 
-    console.log(
-      "✅ [MongoDB Chat Repository] upsertThread result:",
-      threadResult,
-    );
+    console.log("[Chat Repo] upsertThread result:", threadResult);
     return threadResult;
   },
 
@@ -391,7 +363,7 @@ export const mongoChatRepository: ChatRepository = {
     message: Omit<ChatMessage, "createdAt">,
   ): Promise<ChatMessage> {
     console.log(
-      "➕ [MongoDB Chat Repository] insertMessage called with message:",
+      "[Chat Repo] insertMessage called with message:",
       message.role,
       "threadId:",
       message.threadId,
@@ -419,7 +391,7 @@ export const mongoChatRepository: ChatRepository = {
       createdAt: now,
     };
 
-    console.log("✅ [MongoDB Chat Repository] insertMessage result:", result);
+    console.log("[Chat Repo] insertMessage result:", result);
     return result;
   },
 
@@ -427,7 +399,7 @@ export const mongoChatRepository: ChatRepository = {
     message: Omit<ChatMessage, "createdAt">,
   ): Promise<ChatMessage> {
     console.log(
-      "💾 [MongoDB Chat Repository] upsertMessage called with message:",
+      "[Chat Repo] upsertMessage called with message:",
       message.role,
       "threadId:",
       message.threadId,
@@ -463,20 +435,17 @@ export const mongoChatRepository: ChatRepository = {
       threadId: result.threadId,
       role: result.role,
       parts: result.parts,
-      metadata: result.metadata,
+      metadata: result.metadata || undefined,
       createdAt: result.created_at,
     };
 
-    console.log(
-      "✅ [MongoDB Chat Repository] upsertMessage result:",
-      messageResult,
-    );
+    console.log("[Chat Repo] upsertMessage result:", messageResult);
     return messageResult;
   },
 
   async deleteMessagesByChatIdAfterTimestamp(messageId: string): Promise<void> {
     console.log(
-      "🗑️ [MongoDB Chat Repository] deleteMessagesByChatIdAfterTimestamp called with messageId:",
+      "[Chat Repo] deleteMessagesByChatIdAfterTimestamp called with messageId:",
       messageId,
     );
 
@@ -484,7 +453,7 @@ export const mongoChatRepository: ChatRepository = {
 
     if (!isValidObjectId(messageId)) {
       console.log(
-        "✅ [MongoDB Chat Repository] deleteMessagesByChatIdAfterTimestamp: Invalid ObjectId",
+        "[Chat Repo] deleteMessagesByChatIdAfterTimestamp: Invalid ObjectId",
       );
       return;
     }
@@ -503,16 +472,11 @@ export const mongoChatRepository: ChatRepository = {
       created_at: { $gt: message.created_at },
     });
 
-    console.log(
-      "✅ [MongoDB Chat Repository] deleteMessagesByChatIdAfterTimestamp completed",
-    );
+    console.log("[Chat Repo] deleteMessagesByChatIdAfterTimestamp completed");
   },
 
   async deleteAllThreads(userId: string): Promise<void> {
-    console.log(
-      "🗑️ [MongoDB Chat Repository] deleteAllThreads called with userId:",
-      userId,
-    );
+    console.log("[Chat Repo] deleteAllThreads called with userId:", userId);
 
     // Convert userId (UUID or email) to email
     const userEmail = await getEmailFromUserId(userId);
@@ -535,12 +499,12 @@ export const mongoChatRepository: ChatRepository = {
       await messageCollection.deleteMany({ threadId: { $in: threadIds } });
     }
 
-    console.log("✅ [MongoDB Chat Repository] deleteAllThreads completed");
+    console.log("[Chat Repo] deleteAllThreads completed");
   },
 
   async deleteUnarchivedThreads(userId: string): Promise<void> {
     console.log(
-      "🗑️ [MongoDB Chat Repository] deleteUnarchivedThreads called with userId:",
+      "[Chat Repo] deleteUnarchivedThreads called with userId:",
       userId,
     );
 
@@ -551,16 +515,14 @@ export const mongoChatRepository: ChatRepository = {
     // TODO: Implement archive status tracking
     await this.deleteAllThreads(userEmail);
 
-    console.log(
-      "✅ [MongoDB Chat Repository] deleteUnarchivedThreads completed",
-    );
+    console.log("[Chat Repo] deleteUnarchivedThreads completed");
   },
 
   async insertMessages(
     messages: PartialBy<ChatMessage, "createdAt">[],
   ): Promise<ChatMessage[]> {
     console.log(
-      "➕ [MongoDB Chat Repository] insertMessages called with",
+      "[Chat Repo] insertMessages called with",
       messages.length,
       "messages",
     );
@@ -588,7 +550,7 @@ export const mongoChatRepository: ChatRepository = {
     }));
 
     console.log(
-      "✅ [MongoDB Chat Repository] insertMessages result:",
+      "[Chat Repo] insertMessages result:",
       results.length,
       "messages inserted",
     );

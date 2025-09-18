@@ -67,9 +67,22 @@ export async function selectThreadWithMessagesAction(threadId: string) {
     logger.error("Thread not found", threadId);
     return null;
   }
-  if (thread.userId !== session?.user.id) {
+
+  // Check if user has access to this thread using the same logic as the repository
+  if (!session?.user.id) {
+    logger.error("User not found", session?.user.id);
     return null;
   }
+
+  const hasAccess = await chatRepository.checkThreadAccess(
+    thread.userId,
+    session.user.id,
+  );
+
+  if (!hasAccess) {
+    return null;
+  }
+
   const messages = await chatRepository.selectMessagesByThreadId(threadId);
   return { ...thread, messages: messages ?? [] };
 }
