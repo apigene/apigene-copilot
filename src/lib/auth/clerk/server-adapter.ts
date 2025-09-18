@@ -28,6 +28,11 @@ export interface User {
   image?: string | null;
 }
 
+// Simple in-memory cache for user data
+const userCache = new Map<string, { user: User; timestamp: number }>();
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+const ENABLE_CACHE = true; // Only enable in production for safety
+
 export class ClerkServerAdapter {
   async getSession(): Promise<Session | null> {
     try {
@@ -89,6 +94,15 @@ export class ClerkServerAdapter {
         return null;
       }
 
+      // Check cache first (only in production for safety)
+      if (ENABLE_CACHE) {
+        const cached = userCache.get(userId);
+        if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+          console.log(`[Cache] Returning cached user for ${userId}`);
+          return cached.user;
+        }
+      }
+
       // Get user data from Clerk using currentUser()
       const user = await currentUser();
 
@@ -105,7 +119,7 @@ export class ClerkServerAdapter {
       });
 
       // Return user data in expected format
-      return {
+      const userData = {
         id: internalUserId, // Use internal UUID instead of Clerk ID
         email: user?.primaryEmailAddress?.emailAddress || "",
         emailVerified: true,
@@ -114,6 +128,14 @@ export class ClerkServerAdapter {
         updatedAt: new Date(),
         image: user?.imageUrl || null,
       };
+
+      // Cache the result (only in production for safety)
+      if (ENABLE_CACHE) {
+        userCache.set(userId, { user: userData, timestamp: Date.now() });
+        console.log(`[Cache] Cached user for ${userId}`);
+      }
+
+      return userData;
     } catch (error) {
       // Handle authentication errors gracefully
       console.warn("Authentication error in ensureUserExists:", error);
