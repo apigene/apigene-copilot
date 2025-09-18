@@ -41,7 +41,6 @@ export const pgAgentRepository: AgentRepository = {
         visibility: AgentSchema.visibility,
         createdAt: AgentSchema.createdAt,
         updatedAt: AgentSchema.updatedAt,
-        isBookmarked: sql<boolean>`${BookmarkSchema.id} IS NOT NULL`,
       })
       .from(AgentSchema)
       .leftJoin(
@@ -70,7 +69,6 @@ export const pgAgentRepository: AgentRepository = {
       description: result.description ?? undefined,
       icon: result.icon ?? undefined,
       instructions: result.instructions ?? {},
-      isBookmarked: result.isBookmarked ?? false,
     };
   },
 
@@ -88,7 +86,6 @@ export const pgAgentRepository: AgentRepository = {
         updatedAt: AgentSchema.updatedAt,
         userName: UserSchema.name,
         userAvatar: UserSchema.image,
-        isBookmarked: sql<boolean>`false`,
       })
       .from(AgentSchema)
       .innerJoin(UserSchema, eq(AgentSchema.userId, UserSchema.id))
@@ -103,7 +100,6 @@ export const pgAgentRepository: AgentRepository = {
       instructions: result.instructions ?? {},
       userName: result.userName ?? undefined,
       userAvatar: result.userAvatar ?? undefined,
-      isBookmarked: false, // Always false for owned agents
     }));
   },
 
@@ -161,17 +157,6 @@ export const pgAgentRepository: AgentRepository = {
             ),
           ),
         );
-      } else if (filter === "bookmarked") {
-        orConditions.push(
-          and(
-            ne(AgentSchema.userId, currentUserId),
-            or(
-              eq(AgentSchema.visibility, "public"),
-              eq(AgentSchema.visibility, "readonly"),
-            ),
-            sql`${BookmarkSchema.id} IS NOT NULL`,
-          ),
-        );
       } else if (filter === "all") {
         // All available agents (mine + shared) - this overrides other filters
         orConditions = [
@@ -205,7 +190,6 @@ export const pgAgentRepository: AgentRepository = {
         updatedAt: AgentSchema.updatedAt,
         userName: UserSchema.name,
         userAvatar: UserSchema.image,
-        isBookmarked: sql<boolean>`CASE WHEN ${BookmarkSchema.id} IS NOT NULL THEN true ELSE false END`,
       })
       .from(AgentSchema)
       .innerJoin(UserSchema, eq(AgentSchema.userId, UserSchema.id))

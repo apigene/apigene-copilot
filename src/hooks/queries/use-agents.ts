@@ -7,7 +7,7 @@ import { AgentSummary } from "app-types/agent";
 import { useUser } from "auth/client";
 
 interface UseAgentsOptions extends SWRConfiguration {
-  filters?: ("all" | "mine" | "shared" | "bookmarked")[];
+  filters?: ("all" | "mine" | "shared")[];
   limit?: number;
 }
 
@@ -50,18 +50,13 @@ export function useAgents(options: UseAgentsOptions = {}) {
     agents, // All returned agents based on server filters
     myAgents: filterAgents((agent) => agent.userId === currentUserId),
     sharedAgents: filterAgents((agent) => agent.userId !== currentUserId),
-    bookmarkedAgents: filterAgents(
-      (agent) => agent.userId !== currentUserId && agent.isBookmarked === true,
-    ),
     publicAgents: filterAgents((agent) => agent.visibility === "public"),
     readonlyAgents: filterAgents((agent) => agent.visibility === "readonly"),
     isLoading,
     error,
     mutate,
     // Helper to check if any agents exist of a certain type
-    hasAgents: (
-      type: "mine" | "shared" | "bookmarked" | "public" | "readonly",
-    ) => {
+    hasAgents: (type: "mine" | "shared" | "public" | "readonly") => {
       if (!agents) return false;
 
       switch (type) {
@@ -69,10 +64,6 @@ export function useAgents(options: UseAgentsOptions = {}) {
           return agents.some((agent) => agent.userId === currentUserId);
         case "shared":
           return agents.some((agent) => agent.userId !== currentUserId);
-        case "bookmarked":
-          return agents.some(
-            (agent) => agent.userId !== currentUserId && agent.isBookmarked,
-          );
         case "public":
           return agents.some((agent) => agent.visibility === "public");
         case "readonly":

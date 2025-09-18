@@ -7,7 +7,6 @@ import { Button } from "ui/button";
 import { Plus, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { BackgroundPaths } from "ui/background-paths";
-import { useBookmark } from "@/hooks/queries/use-bookmark";
 import { useMutateAgents } from "@/hooks/queries/use-agents";
 import { toast } from "sonner";
 import useSWR from "swr";
@@ -54,15 +53,6 @@ export function AgentsList({
   const sharedAgents =
     allAgents?.filter((agent: AgentSummary) => agent.userId !== userId) ||
     initialSharedAgents;
-
-  const { toggleBookmark: toggleBookmarkHook, isLoading: isBookmarkLoading } =
-    useBookmark({
-      itemType: "agent",
-    });
-
-  const toggleBookmark = async (agentId: string, isBookmarked: boolean) => {
-    await toggleBookmarkHook({ id: agentId, isBookmarked });
-  };
 
   const updateVisibility = async (agentId: string, visibility: Visibility) => {
     safe(() => setVisibilityChangeLoading(agentId))
@@ -181,8 +171,6 @@ export function AgentsList({
               item={agent}
               isOwner={false}
               href={`/agent/${agent.id}`}
-              onBookmarkToggle={toggleBookmark}
-              isBookmarkToggleLoading={isBookmarkLoading(agent.id)}
             />
           ))}
           {sharedAgents.length === 0 && (

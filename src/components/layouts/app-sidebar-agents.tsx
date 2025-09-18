@@ -30,13 +30,13 @@ export function AppSidebarAgents() {
   const t = useTranslations();
   const router = useRouter();
   const [expanded, setExpanded] = useState(false);
-  const { bookmarkedAgents, myAgents, isLoading } = useAgents({
+  const { myAgents, isLoading } = useAgents({
     limit: 50,
   }); // Increase limit since we're not artificially limiting display
 
   const agents = useMemo(() => {
-    return [...myAgents, ...bookmarkedAgents];
-  }, [bookmarkedAgents, myAgents]);
+    return [...myAgents];
+  }, [myAgents]);
 
   const handleAgentClick = useCallback(
     (id: string) => {

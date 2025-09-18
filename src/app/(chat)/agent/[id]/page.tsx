@@ -37,7 +37,6 @@ export default async function AgentPage({
       userId={session.user.id}
       isOwner={isOwner}
       hasEditAccess={hasEditAccess}
-      isBookmarked={agent.isBookmarked || false}
     />
   );
 }

@@ -922,12 +922,12 @@ function AgentSelector({
   onSelectAgent?: (agent: AgentSummary) => void;
 }) {
   const t = useTranslations();
-  const { myAgents, bookmarkedAgents } = useAgents({
-    filters: ["mine", "bookmarked"],
+  const { myAgents } = useAgents({
+    filters: ["mine"],
   });
 
   const emptyAgent = useMemo(() => {
-    if (myAgents.length + bookmarkedAgents.length > 0) return null;
+    if (myAgents.length > 0) return null;
     return (
       <Link
         href={"/agent/new"}
@@ -939,14 +939,12 @@ function AgentSelector({
             <ArrowUpRightIcon className="size-3" />
           </div>
           <p className="text-muted-foreground">
-            {bookmarkedAgents.length > 0
-              ? t("Layout.createYourOwnAgentOrSelectShared")
-              : t("Layout.createYourOwnAgent")}
+            {t("Layout.createYourOwnAgent")}
           </p>
         </div>
       </Link>
     );
-  }, [myAgents.length, bookmarkedAgents.length, t]);
+  }, [myAgents.length, t]);
 
   return (
     <DropdownMenuGroup>
@@ -980,50 +978,6 @@ function AgentSelector({
                   </div>
                 ) : null}
                 <span className="truncate min-w-0">{agent.name}</span>
-              </DropdownMenuItem>
-            ))}
-
-            {myAgents.length > 0 && bookmarkedAgents.length > 0 && (
-              <DropdownMenuSeparator />
-            )}
-
-            {bookmarkedAgents.map((agent) => (
-              <DropdownMenuItem
-                key={agent.id}
-                className="cursor-pointer"
-                onClick={() => onSelectAgent?.(agent)}
-              >
-                {agent.icon && agent.icon.type === "emoji" ? (
-                  <div
-                    style={{
-                      backgroundColor: agent.icon?.style?.backgroundColor,
-                    }}
-                    className="p-1 rounded flex items-center justify-center ring ring-background border"
-                  >
-                    <Avatar className="size-3">
-                      <AvatarImage src={agent.icon?.value} />
-                      <AvatarFallback>{agent.name.slice(0, 1)}</AvatarFallback>
-                    </Avatar>
-                  </div>
-                ) : null}
-                <div className="flex items-center justify-between flex-1 min-w-0">
-                  <span className="truncate min-w-0">{agent.name}</span>
-                  {agent.userName && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Avatar className="size-4 ml-2 shrink-0">
-                          <AvatarImage src={agent.userAvatar} />
-                          <AvatarFallback className="text-xs text-muted-foreground font-medium">
-                            {agent.userName[0]?.toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {t("Common.sharedBy", { userName: agent.userName })}
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
-                </div>
               </DropdownMenuItem>
             ))}
           </DropdownMenuSubContent>

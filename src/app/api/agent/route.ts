@@ -3,7 +3,7 @@ import { getSession } from "auth/server";
 import { z } from "zod";
 import { serverCache } from "lib/cache";
 import { CacheKeys } from "lib/cache/cache-keys";
-import { AgentCreateSchema, AgentQuerySchema } from "app-types/agent";
+import { AgentQuerySchema } from "app-types/agent";
 
 export async function GET(request: Request) {
   const session = await getSession();
@@ -59,12 +59,23 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     const body = await request.json();
-    const data = AgentCreateSchema.parse(body);
 
-    const agent = await agentRepository.insertAgent({
-      ...data,
+    // Convert API format to frontend format
+    const frontendData = {
+      name: body.name,
+      description: body.description,
+      icon: body.icon
+        ? { type: "emoji" as const, value: body.icon }
+        : undefined,
+      instructions: {
+        systemPrompt: body.instructions,
+        mentions: [],
+      },
+      visibility: body.agent_type || "private",
       userId: session.user.id,
-    });
+    };
+
+    const agent = await agentRepository.insertAgent(frontendData);
     serverCache.delete(CacheKeys.agentInstructions(agent.id));
 
     return Response.json(agent);
@@ -76,7 +87,7 @@ export async function POST(request: Request): Promise<Response> {
       );
     }
 
-    console.error("Failed to upsert agent:", error);
+    console.error("Failed to create agent:", error);
     return Response.json(
       { message: "Internal Server Error" },
       {

@@ -6,14 +6,8 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useMutateAgents } from "@/hooks/queries/use-agents";
 import { useMcpList } from "@/hooks/queries/use-mcp-list";
-import { useWorkflowToolList } from "@/hooks/queries/use-workflow-tool-list";
 import { useObjectState } from "@/hooks/use-object-state";
-import { useBookmark } from "@/hooks/queries/use-bookmark";
-import { Agent, AgentCreateSchema, AgentUpdateSchema } from "app-types/agent";
-import { ChatMention } from "app-types/chat";
-import { MCPServerInfo } from "app-types/mcp";
-import { WorkflowSummary } from "app-types/workflow";
-import { DefaultToolName } from "lib/ai/tools";
+import { Agent } from "app-types/agent";
 import { BACKGROUND_COLORS } from "lib/const";
 import { cn, fetcher, objectFlow } from "lib/utils";
 import { safe } from "ts-safe";
@@ -28,19 +22,25 @@ import {
 } from "ui/dropdown-menu";
 import { Input } from "ui/input";
 import { Label } from "ui/label";
-import { Textarea } from "ui/textarea";
 import { ScrollArea } from "ui/scroll-area";
 import { Skeleton } from "ui/skeleton";
 import { TextShimmer } from "ui/text-shimmer";
 import { ShareableActions, Visibility } from "@/components/shareable-actions";
 import { GenerateAgentDialog } from "./generate-agent-dialog";
 import { AgentIconPicker } from "./agent-icon-picker";
-import { AgentToolSelector } from "./agent-tool-selector";
+import { AgentToolSelectorNew } from "./agent-tool-selector-new";
 import {
   RandomDataGeneratorExample,
   WeatherExample,
 } from "lib/ai/agent/example";
 import { notify } from "lib/notify";
+import dynamic from "next/dynamic";
+
+// Dynamic import for MDEditor to avoid SSR issues
+const MDEditor = dynamic(
+  () => import("@uiw/react-md-editor").then((mod) => mod.default),
+  { ssr: false },
+);
 
 const defaultConfig = (): PartialBy<
   Omit<Agent, "createdAt" | "updatedAt" | "userId">,
@@ -58,11 +58,12 @@ const defaultConfig = (): PartialBy<
       },
     },
     instructions: {
-      role: "",
       systemPrompt: "",
       mentions: [],
     },
     visibility: "private",
+    mcps: [],
+    context: [],
   };
 };
 
@@ -71,7 +72,6 @@ interface EditAgentProps {
   userId: string;
   isOwner?: boolean;
   hasEditAccess?: boolean;
-  isBookmarked?: boolean;
 }
 
 export default function EditAgent({
@@ -94,73 +94,21 @@ export default function EditAgent({
   // Initialize agent state with initial data or defaults
   const [agent, setAgent] = useObjectState(initialAgent || defaultConfig());
 
-  const { toggleBookmark, isLoading: isBookmarkToggleLoadingFn } = useBookmark({
-    itemType: "agent",
-  });
-  const isBookmarkToggleLoading = useMemo(
-    () =>
-      (initialAgent?.id && isBookmarkToggleLoadingFn(initialAgent?.id)) ||
-      false,
-    [initialAgent?.id, isBookmarkToggleLoadingFn],
-  );
-
-  const { data: mcpList, isLoading: isMcpLoading } = useMcpList();
-  const { data: workflowToolList, isLoading: isWorkflowLoading } =
-    useWorkflowToolList();
-
-  const assignToolsByNames = useCallback(
-    (toolNames: string[]) => {
-      const allMentions: ChatMention[] = [];
-
-      objectFlow(DefaultToolName).forEach((toolName) => {
-        if (toolNames.includes(toolName)) {
-          allMentions.push({
-            type: "defaultTool",
-            name: toolName,
-            label: toolName,
-          });
-        }
-      });
-
-      (mcpList as (MCPServerInfo & { id: string })[])?.forEach((mcp) => {
-        mcp.toolInfo.forEach((tool) => {
-          if (toolNames.includes(tool.name)) {
-            allMentions.push({
-              type: "mcpTool",
-              serverName: mcp.name,
-              name: tool.name,
-              serverId: mcp.id,
-            });
-          }
-        });
-      });
-
-      (workflowToolList as WorkflowSummary[])?.forEach((workflow) => {
-        if (toolNames.includes(workflow.name)) {
-          allMentions.push({
-            type: "workflow",
-            name: workflow.name,
-            workflowId: workflow.id,
-          });
-        }
-      });
-
-      if (allMentions.length > 0) {
-        setAgent((prev) => ({
-          instructions: {
-            ...prev.instructions,
-            mentions: allMentions,
-          },
-        }));
-      }
-    },
-    [mcpList, workflowToolList, setAgent],
-  );
+  const { isLoading: isMcpLoading } = useMcpList();
 
   const saveAgent = useCallback(() => {
     if (initialAgent) {
       safe(() => setIsSaving(true))
-        .map(() => AgentUpdateSchema.parse({ ...agent }))
+        .map(() => ({
+          name: agent.name,
+          description: agent.description,
+          instructions: agent.instructions?.systemPrompt || "",
+          apis: agent.apis || [],
+          mcps: agent.mcps || [],
+          context: agent.context || [],
+          icon: agent.icon?.value || agent.icon || null,
+          agent_type: agent.visibility || "private",
+        }))
         .map(JSON.stringify)
         .map(async (body) =>
           fetcher(`/api/agent/${initialAgent.id}`, {
@@ -177,7 +125,16 @@ export default function EditAgent({
         .watch(() => setIsSaving(false));
     } else {
       safe(() => setIsSaving(true))
-        .map(() => AgentCreateSchema.parse({ ...agent, userId }))
+        .map(() => ({
+          name: agent.name,
+          description: agent.description,
+          instructions: agent.instructions?.systemPrompt || "",
+          apis: agent.apis || [],
+          mcps: agent.mcps || [],
+          context: agent.context || [],
+          icon: agent.icon?.value || agent.icon || null,
+          agent_type: agent.visibility || "private",
+        }))
         .map(JSON.stringify)
         .map(async (body) => {
           return fetcher(`/api/agent`, {
@@ -199,7 +156,9 @@ export default function EditAgent({
     async (visibility: Visibility) => {
       if (initialAgent?.id) {
         safe(() => setIsVisibilityChangeLoading(true))
-          .map(() => AgentUpdateSchema.parse({ visibility }))
+          .map(() => ({
+            agent_type: visibility,
+          }))
           .map(JSON.stringify)
           .map(async (body) =>
             fetcher(`/api/agent/${initialAgent.id}`, {
@@ -242,25 +201,6 @@ export default function EditAgent({
       .watch(() => setIsSaving(false));
   }, [initialAgent?.id, mutateAgents, router, t]);
 
-  const handleBookmarkToggle = useCallback(async () => {
-    if (!initialAgent?.id || isBookmarkToggleLoading) return;
-    safe(async () => {
-      await toggleBookmark({
-        id: initialAgent.id,
-        isBookmarked: agent.isBookmarked,
-      });
-    })
-      .ifOk(() => {
-        setAgent({ isBookmarked: !agent.isBookmarked });
-      })
-      .ifFail(handleErrorWithToast);
-  }, [
-    initialAgent?.id,
-    toggleBookmark,
-    agent.isBookmarked,
-    isBookmarkToggleLoading,
-  ]);
-
   const handleAgentChange = useCallback((generatedData: any) => {
     if (textareaRef.current) {
       textareaRef.current.scrollTo({
@@ -294,22 +234,12 @@ export default function EditAgent({
   }, []);
 
   const isLoadingTool = useMemo(() => {
-    return isMcpLoading || isWorkflowLoading;
-  }, [isMcpLoading, isWorkflowLoading]);
+    return isMcpLoading;
+  }, [isMcpLoading]);
 
   const isLoading = useMemo(() => {
-    return (
-      isLoadingTool ||
-      isSaving ||
-      isVisibilityChangeLoading ||
-      isBookmarkToggleLoading
-    );
-  }, [
-    isLoadingTool,
-    isSaving,
-    isVisibilityChangeLoading,
-    isBookmarkToggleLoading,
-  ]);
+    return isLoadingTool || isSaving || isVisibilityChangeLoading;
+  }, [isLoadingTool, isSaving, isVisibilityChangeLoading]);
 
   const isGenerating = openGenerateAgentDialog;
 
@@ -379,13 +309,10 @@ export default function EditAgent({
                 <ShareableActions
                   type="agent"
                   visibility={agent.visibility || "private"}
-                  isBookmarked={agent?.isBookmarked || false}
                   isOwner={isOwner}
                   onVisibilityChange={updateVisibility}
                   isVisibilityChangeLoading={isVisibilityChangeLoading}
                   disabled={isLoading}
-                  onBookmarkToggle={handleBookmarkToggle}
-                  isBookmarkToggleLoading={isBookmarkToggleLoading}
                 />
               </div>
             )}
@@ -451,32 +378,6 @@ export default function EditAgent({
         </div>
 
         <div className="flex flex-col gap-6">
-          <div className="flex gap-2 items-center">
-            <span>{t("Agent.thisAgentIs")}</span>
-            {false ? (
-              <Skeleton className="w-44 h-10" />
-            ) : (
-              <Input
-                id="agent-role"
-                data-testid="agent-role-input"
-                disabled={isLoading || !hasEditAccess}
-                placeholder={t("Agent.agentRolePlaceholder")}
-                className="hover:bg-input placeholder:text-xs bg-secondary/40 w-44 transition-colors border-transparent border-none! focus-visible:bg-input! ring-0!"
-                value={agent.instructions?.role || ""}
-                onChange={(e) =>
-                  setAgent({
-                    instructions: {
-                      ...agent.instructions,
-                      role: e.target.value || "",
-                    },
-                  })
-                }
-                readOnly={!hasEditAccess}
-              />
-            )}
-            <span>{t("Agent.expertIn")}</span>
-          </div>
-
           <div className="flex gap-2 flex-col">
             <Label htmlFor="agent-prompt" className="text-base">
               {t("Agent.agentInstructionsLabel")}
@@ -484,24 +385,27 @@ export default function EditAgent({
             {false ? (
               <Skeleton className="w-full h-48" />
             ) : (
-              <Textarea
-                id="agent-prompt"
-                data-testid="agent-prompt-textarea"
-                ref={textareaRef}
-                disabled={isLoading || !hasEditAccess}
-                placeholder={t("Agent.agentInstructionsPlaceholder")}
-                className="p-6 hover:bg-input min-h-48 max-h-96 overflow-y-auto resize-none placeholder:text-xs bg-secondary/40 transition-colors border-transparent border-none! focus-visible:bg-input! ring-0!"
-                value={agent.instructions?.systemPrompt || ""}
-                onChange={(e) =>
-                  setAgent({
-                    instructions: {
-                      ...agent.instructions,
-                      systemPrompt: e.target.value || "",
-                    },
-                  })
-                }
-                readOnly={!hasEditAccess}
-              />
+              <div className="h-[400px]" data-color-mode="dark">
+                <MDEditor
+                  value={agent.instructions?.systemPrompt || ""}
+                  onChange={(val) =>
+                    setAgent({
+                      instructions: {
+                        ...agent.instructions,
+                        systemPrompt: val || "",
+                      },
+                    })
+                  }
+                  preview="live"
+                  height="100%"
+                  data-color-mode="dark"
+                  visibleDragbar={false}
+                  textareaProps={{
+                    placeholder: t("Agent.agentInstructionsPlaceholder"),
+                    readOnly: !hasEditAccess || isLoading,
+                  }}
+                />
+              </div>
             )}
           </div>
 
@@ -512,17 +416,21 @@ export default function EditAgent({
             {false ? (
               <Skeleton className="w-full h-12" />
             ) : (
-              <AgentToolSelector
+              <AgentToolSelectorNew
                 mentions={agent.instructions?.mentions || []}
+                mcps={agent.mcps || []}
+                context={agent.context || []}
                 isLoading={isLoadingTool}
                 disabled={isLoading}
                 hasEditAccess={hasEditAccess}
-                onChange={(mentions) =>
+                onChange={(mentions, mcps, context) =>
                   setAgent({
                     instructions: {
                       ...agent.instructions,
                       mentions,
                     },
+                    mcps,
+                    context,
                   })
                 }
               />
@@ -561,7 +469,6 @@ export default function EditAgent({
         open={openGenerateAgentDialog}
         onOpenChange={setOpenGenerateAgentDialog}
         onAgentChange={handleAgentChange}
-        onToolsGenerated={assignToolsByNames}
       />
     </ScrollArea>
   );

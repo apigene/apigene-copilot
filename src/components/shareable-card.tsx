@@ -28,11 +28,9 @@ interface ShareableCardProps {
   item: AgentSummary | WorkflowSummary;
   isOwner?: boolean;
   href: string;
-  onBookmarkToggle?: (itemId: string, isBookmarked: boolean) => void;
   onVisibilityChange?: (itemId: string, visibility: Visibility) => void;
   onDelete?: (itemId: string) => void;
   isVisibilityChangeLoading?: boolean;
-  isBookmarkToggleLoading?: boolean;
   isDeleteLoading?: boolean;
   actionsDisabled?: boolean;
 }
@@ -42,17 +40,14 @@ export function ShareableCard({
   item,
   isOwner = true,
   href,
-  onBookmarkToggle,
   onVisibilityChange,
   onDelete,
-  isBookmarkToggleLoading,
   isVisibilityChangeLoading,
   isDeleteLoading,
   actionsDisabled,
 }: ShareableCardProps) {
   const t = useTranslations();
   const isPublished = (item as WorkflowSummary).isPublished;
-  const isBookmarked = (item as AgentSummary).isBookmarked;
 
   return (
     <Link href={href} title={item.name}>
@@ -110,20 +105,13 @@ export function ShareableCard({
                 type={type}
                 visibility={item.visibility}
                 isOwner={isOwner}
-                isBookmarked={isBookmarked}
                 editHref={href}
                 onVisibilityChange={
                   onVisibilityChange
                     ? (visibility) => onVisibilityChange(item.id, visibility)
                     : undefined
                 }
-                onBookmarkToggle={
-                  onBookmarkToggle
-                    ? (isBookmarked) => onBookmarkToggle(item.id, isBookmarked)
-                    : undefined
-                }
                 onDelete={onDelete ? () => onDelete(item.id) : undefined}
-                isBookmarkToggleLoading={isBookmarkToggleLoading}
                 isVisibilityChangeLoading={isVisibilityChangeLoading}
                 isDeleteLoading={isDeleteLoading}
                 disabled={actionsDisabled}

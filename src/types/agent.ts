@@ -14,6 +14,29 @@ export const AgentInstructionsSchema = z.object({
   mentions: z.array(ChatMentionSchema).optional(),
 });
 
+// Backend API compatible schemas
+export const AgentCreateApiSchema = z.object({
+  name: z.string().min(1).max(100),
+  description: z.string().max(8000).optional(),
+  instructions: z.any(), // Can be string or object
+  apis: z.array(z.string()).optional().default([]),
+  mcps: z.array(z.string()).optional().default([]),
+  context: z.array(z.string()).optional().default([]),
+  icon: z.any().optional(), // Can be string, object, or null
+  agent_type: z.enum(["private", "public"]).optional().default("private"),
+});
+
+export const AgentUpdateApiSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  description: z.string().max(8000).optional(),
+  instructions: z.any().optional(),
+  apis: z.array(z.string()).optional(),
+  mcps: z.array(z.string()).optional(),
+  context: z.array(z.string()).optional(),
+  icon: z.any().optional(),
+  agent_type: z.enum(["private", "public"]).optional(),
+});
+
 export const AgentCreateSchema = z
   .object({
     name: z.string().min(1).max(100),
@@ -47,7 +70,7 @@ export const AgentUpdateSchema = z
   .strip();
 
 export const AgentQuerySchema = z.object({
-  type: z.enum(["all", "mine", "shared", "bookmarked"]).default("all"),
+  type: z.enum(["all", "mine", "shared"]).default("all"),
   filters: z.string().optional(),
   limit: z.coerce.number().min(1).max(100).default(50),
 });
@@ -65,11 +88,16 @@ export type AgentSummary = {
   updatedAt: Date;
   userName?: string;
   userAvatar?: string;
-  isBookmarked?: boolean;
 };
 
 export type Agent = AgentSummary & {
   instructions: z.infer<typeof AgentInstructionsSchema>;
+  // Backend API fields
+  apis?: string[];
+  mcps?: string[];
+  context?: string[];
+  agent_type?: string;
+  created_by?: string;
 };
 
 export type AgentRepository = {
@@ -89,7 +117,7 @@ export type AgentRepository = {
 
   selectAgents(
     currentUserId: string,
-    filters?: ("all" | "mine" | "shared" | "bookmarked")[],
+    filters?: ("all" | "mine" | "shared")[],
     limit?: number,
   ): Promise<AgentSummary[]>;
 

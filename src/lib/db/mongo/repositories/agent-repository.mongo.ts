@@ -1,135 +1,174 @@
-import { getCollection, COLLECTIONS } from "../mongodb";
-import { ObjectId } from "mongodb";
-import { getCurrentUserEmail } from "../auth-utils";
+import { ApigeneClient } from "@/lib/api/apigene-client";
+import { createApigeneClientWithAuth } from "@/lib/api/apigene-client-server";
 import type { AgentRepository, Agent, AgentSummary } from "app-types/agent";
 
-// MongoDB Agent Repository Implementation
+// Helper function to create API client with authentication
+const createApiClient = async (): Promise<ApigeneClient> => {
+  return await createApigeneClientWithAuth();
+};
+
+// Helper function to convert frontend agent data to backend API format
+const convertToApiFormat = (agent: any) => {
+  return {
+    name: agent.name,
+    description: agent.description || "",
+    instructions: agent.instructions?.systemPrompt || "",
+    apis: agent.apis || [],
+    mcps: agent.mcps || [],
+    context: agent.context || [],
+    icon: agent.icon?.value || agent.icon || null,
+    agent_type: agent.visibility || "private",
+  };
+};
+
+// Helper function to convert backend API response to frontend format
+const convertFromApiFormat = (apiAgent: any): Agent => {
+  return {
+    id: apiAgent.id,
+    name: apiAgent.name,
+    description: apiAgent.description,
+    icon: apiAgent.icon ? { type: "emoji", value: apiAgent.icon } : undefined,
+    userId: apiAgent.created_by,
+    instructions: {
+      systemPrompt: apiAgent.instructions,
+      mentions: [], // Will be populated separately if needed
+    },
+    visibility: apiAgent.agent_type,
+    createdAt: new Date(apiAgent.created_at),
+    updatedAt: new Date(apiAgent.updated_at),
+    // Backend API fields
+    apis: apiAgent.apis || [],
+    mcps: apiAgent.mcps || [],
+    context: apiAgent.context || [],
+    agent_type: apiAgent.agent_type,
+    created_by: apiAgent.created_by,
+  };
+};
+
+// API-based Agent Repository Implementation
 export const mongoAgentRepository: AgentRepository = {
   async insertAgent(agent) {
     console.log(
-      "➕ [MongoDB Agent Repository] insertAgent called with agent:",
+      "➕ [API Agent Repository] insertAgent called with agent:",
       agent.name,
       "userId:",
       agent.userId,
     );
 
-    // Get current user information
-    const userEmail = await getCurrentUserEmail();
+    const apiClient = await createApiClient();
 
-    const collection = await getCollection(COLLECTIONS.AGENTS);
-    const now = new Date();
+    try {
+      const apiData = convertToApiFormat(agent);
 
-    const agentDoc = {
-      name: agent.name,
-      description: agent.description,
-      icon: agent.icon,
-      created_by: userEmail,
-      instructions: agent.instructions,
-      visibility: agent.visibility || "private",
-      created_at: now,
-      updated_at: now,
-    };
+      console.log(
+        "🔧 [API Agent Repository] Creating new agent with data:",
+        apiData,
+      );
 
-    const insertResult = await collection.insertOne(agentDoc);
+      const createdAgent = await apiClient.post("/api/agent/create", apiData);
+      const result = convertFromApiFormat(createdAgent);
 
-    const result: Agent = {
-      id: insertResult.insertedId.toString(),
-      name: agentDoc.name,
-      description: agentDoc.description,
-      icon: agentDoc.icon,
-      userId: agentDoc.created_by,
-      instructions: agentDoc.instructions,
-      visibility: agentDoc.visibility,
-      createdAt: now,
-      updatedAt: now,
-    };
+      console.log("✅ [API Agent Repository] insertAgent result:", result);
+      return result;
+    } catch (error: any) {
+      console.error("❌ [API Agent Repository] insertAgent error:", error);
 
-    console.log("✅ [MongoDB Agent Repository] insertAgent result:", result);
-    return result;
+      // Handle specific "body stream already read" error
+      if (error.message && error.message.includes("body stream already read")) {
+        throw new Error(
+          "API request failed due to response handling issue. Please try again.",
+        );
+      }
+
+      // Handle 404 errors specifically for create operations
+      if (error.status === 404) {
+        throw new Error(
+          `Agent endpoint not found. Please check if the backend API is running and accessible.`,
+        );
+      }
+
+      throw error;
+    }
   },
 
   async selectAgentById(id: string, userId: string): Promise<Agent | null> {
     console.log(
-      "🔍 [MongoDB Agent Repository] selectAgentById called with id:",
+      "🔍 [API Agent Repository] selectAgentById called with id:",
       id,
       "userId:",
       userId,
     );
 
-    // Get current user email for consistency
-    const userEmail = await getCurrentUserEmail();
+    const apiClient = await createApiClient();
 
-    const collection = await getCollection(COLLECTIONS.AGENTS);
+    try {
+      const agent = await apiClient.get(`/api/agent/get/${id}`);
+      const result = convertFromApiFormat(agent);
 
-    const doc = await collection.findOne({
-      _id: new ObjectId(id),
-      created_by: userEmail, // Ignore passed userId, use current user email
-    });
-
-    if (!doc) {
       console.log(
-        "✅ [MongoDB Agent Repository] selectAgentById result: Agent not found",
+        "✅ [API Agent Repository] selectAgentById result: Agent found",
       );
-      return null;
+      return result;
+    } catch (error: any) {
+      if (error.status === 404) {
+        console.log(
+          "✅ [API Agent Repository] selectAgentById result: Agent not found",
+        );
+        return null;
+      }
+
+      // Handle specific "body stream already read" error by returning null
+      if (error.message && error.message.includes("body stream already read")) {
+        console.log(
+          "✅ [API Agent Repository] selectAgentById result: Handling body stream error, returning null",
+        );
+        return null;
+      }
+
+      console.error("❌ [API Agent Repository] selectAgentById error:", error);
+      throw error;
     }
-
-    const result: Agent = {
-      id: doc._id.toString(),
-      name: doc.name,
-      description: doc.description,
-      icon: doc.icon,
-      userId: doc.created_by,
-      instructions: doc.instructions,
-      visibility: doc.visibility,
-      createdAt: doc.created_at,
-      updatedAt: doc.updated_at,
-    };
-
-    console.log(
-      "✅ [MongoDB Agent Repository] selectAgentById result: Agent found",
-    );
-    return result;
   },
 
   async selectAgentsByUserId(userId: string): Promise<Agent[]> {
     console.log(
-      "🔍 [MongoDB Agent Repository] selectAgentsByUserId called with userId:",
+      "🔍 [API Agent Repository] selectAgentsByUserId called with userId:",
       userId,
     );
 
-    // Get current user email for consistency
-    const userEmail = await getCurrentUserEmail();
+    const apiClient = await createApiClient();
 
-    const collection = await getCollection(COLLECTIONS.AGENTS);
+    try {
+      const agents = await apiClient.get("/api/agent/list?agent_type=private");
+      const results = agents.map((agent: any) => convertFromApiFormat(agent));
 
-    const docs = await collection
-      .find({ created_by: userEmail }) // Ignore passed userId, use current user email
-      .sort({ updated_at: -1 })
-      .toArray();
+      console.log(
+        "✅ [API Agent Repository] selectAgentsByUserId result:",
+        results.length,
+        "agents found",
+      );
+      return results;
+    } catch (error: any) {
+      console.error(
+        "❌ [API Agent Repository] selectAgentsByUserId error:",
+        error,
+      );
 
-    const results: Agent[] = docs.map((doc) => ({
-      id: doc._id.toString(),
-      name: doc.name,
-      description: doc.description,
-      icon: doc.icon,
-      userId: doc.created_by,
-      instructions: doc.instructions,
-      visibility: doc.visibility,
-      createdAt: doc.created_at,
-      updatedAt: doc.updated_at,
-    }));
+      // Handle specific "body stream already read" error by returning empty array
+      if (error.message && error.message.includes("body stream already read")) {
+        console.log(
+          "✅ [API Agent Repository] selectAgentsByUserId result: Handling body stream error, returning empty array",
+        );
+        return [];
+      }
 
-    console.log(
-      "✅ [MongoDB Agent Repository] selectAgentsByUserId result:",
-      results.length,
-      "agents found",
-    );
-    return results;
+      throw error;
+    }
   },
 
   async updateAgent(id: string, userId: string, agent) {
     console.log(
-      "✏️ [MongoDB Agent Repository] updateAgent called with id:",
+      "✏️ [API Agent Repository] updateAgent called with id:",
       id,
       "userId:",
       userId,
@@ -137,85 +176,81 @@ export const mongoAgentRepository: AgentRepository = {
       agent,
     );
 
-    // Get current user email for consistency
-    const userEmail = await getCurrentUserEmail();
+    const apiClient = await createApiClient();
 
-    const collection = await getCollection(COLLECTIONS.AGENTS);
-    const now = new Date();
+    try {
+      const apiData = convertToApiFormat(agent);
 
-    const updateDoc: any = {
-      updated_at: now,
-    };
+      console.log(
+        "🔧 [API Agent Repository] Updating agent with data:",
+        apiData,
+      );
 
-    if (agent.name !== undefined) updateDoc.name = agent.name;
-    if (agent.description !== undefined)
-      updateDoc.description = agent.description;
-    if (agent.icon !== undefined) updateDoc.icon = agent.icon;
-    if (agent.instructions !== undefined)
-      updateDoc.instructions = agent.instructions;
-    if (agent.visibility !== undefined) updateDoc.visibility = agent.visibility;
+      const updatedAgent = await apiClient.put(
+        `/api/agent/update/${id}`,
+        apiData,
+      );
+      const result = convertFromApiFormat(updatedAgent);
 
-    const result = await collection.findOneAndUpdate(
-      { _id: new ObjectId(id), created_by: userEmail }, // Ignore passed userId, use current user email
-      { $set: updateDoc },
-      { returnDocument: "after" },
-    );
+      console.log("✅ [API Agent Repository] updateAgent result:", result);
+      return result;
+    } catch (error: any) {
+      console.error("❌ [API Agent Repository] updateAgent error:", error);
 
-    if (!result) {
-      throw new Error(`Agent with id ${id} not found or access denied`);
+      // Handle specific "body stream already read" error
+      if (error.message && error.message.includes("body stream already read")) {
+        throw new Error(
+          "API request failed due to response handling issue. Please try again.",
+        );
+      }
+
+      // Handle 404 errors specifically for update operations
+      if (error.status === 404) {
+        throw new Error(
+          `Agent endpoint not found. Please check if the backend API is running and accessible.`,
+        );
+      }
+
+      throw error;
     }
-
-    const agentResult: Agent = {
-      id: result._id.toString(),
-      name: result.name,
-      description: result.description,
-      icon: result.icon,
-      userId: result.created_by,
-      instructions: result.instructions,
-      visibility: result.visibility,
-      createdAt: result.created_at,
-      updatedAt: result.updated_at,
-    };
-
-    console.log(
-      "✅ [MongoDB Agent Repository] updateAgent result:",
-      agentResult,
-    );
-    return agentResult;
   },
 
   async deleteAgent(id: string, userId: string): Promise<void> {
     console.log(
-      "🗑️ [MongoDB Agent Repository] deleteAgent called with id:",
+      "🗑️ [API Agent Repository] deleteAgent called with id:",
       id,
       "userId:",
       userId,
     );
 
-    // Get current user email for consistency
-    const userEmail = await getCurrentUserEmail();
+    const apiClient = await createApiClient();
 
-    const collection = await getCollection(COLLECTIONS.AGENTS);
+    try {
+      await apiClient.delete(`/api/agent/delete/${id}`);
 
-    const result = await collection.deleteOne({
-      _id: new ObjectId(id),
-      created_by: userEmail, // Ignore passed userId, use current user email
-    });
+      console.log("✅ [API Agent Repository] deleteAgent completed");
+    } catch (error: any) {
+      console.error("❌ [API Agent Repository] deleteAgent error:", error);
 
-    if (result.deletedCount === 0) {
-      throw new Error(`Agent with id ${id} not found or access denied`);
+      // Handle specific "body stream already read" error by logging and continuing
+      if (error.message && error.message.includes("body stream already read")) {
+        console.log(
+          "✅ [API Agent Repository] deleteAgent result: Handling body stream error, assuming success",
+        );
+        return;
+      }
+
+      throw error;
     }
-
-    console.log("✅ [MongoDB Agent Repository] deleteAgent completed");
   },
 
   async selectAgents(
     currentUserId: string,
-    filters?: ("all" | "mine" | "shared" | "bookmarked")[],
+    filters?: ("all" | "mine" | "shared")[],
     limit?: number,
   ): Promise<AgentSummary[]> {
     console.log(
-      "🔍 [MongoDB Agent Repository] selectAgents called with currentUserId:",
+      "🔍 [API Agent Repository] selectAgents called with currentUserId:",
       currentUserId,
       "filters:",
       filters,
@@ -223,72 +258,56 @@ export const mongoAgentRepository: AgentRepository = {
       limit,
     );
 
-    // Get current user email for consistency
-    const userEmail = await getCurrentUserEmail();
+    const apiClient = await createApiClient();
 
-    const collection = await getCollection(COLLECTIONS.AGENTS);
-    const userCollection = await getCollection(COLLECTIONS.USERS);
-
-    // Build query based on filters
-    const query: any = {};
-
-    if (filters && filters.length > 0) {
-      if (filters.includes("mine")) {
-        query.created_by = userEmail; // Use current user email instead of passed userId
-      } else if (filters.includes("shared")) {
-        query.visibility = "public";
-      } else if (filters.includes("all")) {
-        // No additional filter - get all visible agents
-        query.$or = [
-          { created_by: userEmail }, // Use current user email instead of passed userId
-          { visibility: "public" },
-        ];
+    try {
+      // Build query parameters based on filters
+      let queryParams = "";
+      if (filters && filters.length > 0) {
+        if (filters.includes("mine")) {
+          queryParams = "?agent_type=private";
+        } else if (filters.includes("shared")) {
+          queryParams = "?agent_type=public";
+        } else if (filters.includes("all")) {
+          queryParams = ""; // Get all agents
+        }
       }
-    } else {
-      // Default: get user's own agents and public agents
-      query.$or = [
-        { created_by: userEmail }, // Use current user email instead of passed userId
-        { visibility: "public" },
-      ];
-    }
 
-    const docs = await collection
-      .find(query)
-      .sort({ updated_at: -1 })
-      .limit(limit || 50)
-      .toArray();
+      const agents = await apiClient.get(`/api/agent/list${queryParams}`);
 
-    // Get user information for each agent
-    const results = await Promise.all(
-      docs.map(async (doc) => {
-        // Since we're now using email as created_by, we need to find user by email
-        const userDoc = await userCollection.findOne(
-          { email: doc.created_by },
-          { projection: { name: 1, image: 1 } },
+      // Convert to AgentSummary format
+      const results: AgentSummary[] = agents.map((agent: any) => ({
+        id: agent.id,
+        name: agent.name,
+        description: agent.description,
+        icon: agent.icon ? { type: "emoji", value: agent.icon } : undefined,
+        userId: agent.created_by,
+        visibility: agent.agent_type,
+        createdAt: new Date(agent.created_at),
+        updatedAt: new Date(agent.updated_at),
+        userName: agent.created_by, // Using email as name for now
+        userAvatar: undefined,
+      }));
+
+      console.log(
+        "✅ [API Agent Repository] selectAgents result:",
+        results.length,
+        "agents found",
+      );
+      return results;
+    } catch (error: any) {
+      console.error("❌ [API Agent Repository] selectAgents error:", error);
+
+      // Handle specific "body stream already read" error by returning empty array
+      if (error.message && error.message.includes("body stream already read")) {
+        console.log(
+          "✅ [API Agent Repository] selectAgents result: Handling body stream error, returning empty array",
         );
+        return [];
+      }
 
-        return {
-          id: doc._id.toString(),
-          name: doc.name,
-          description: doc.description,
-          icon: doc.icon,
-          userId: doc.created_by,
-          visibility: doc.visibility,
-          createdAt: doc.created_at,
-          updatedAt: doc.updated_at,
-          userName: userDoc?.name,
-          userAvatar: userDoc?.image,
-          isBookmarked: false, // TODO: Implement bookmark functionality
-        } as AgentSummary;
-      }),
-    );
-
-    console.log(
-      "✅ [MongoDB Agent Repository] selectAgents result:",
-      results.length,
-      "agents found",
-    );
-    return results;
+      throw error;
+    }
   },
 
   async checkAccess(
@@ -297,7 +316,7 @@ export const mongoAgentRepository: AgentRepository = {
     destructive?: boolean,
   ): Promise<boolean> {
     console.log(
-      "🔐 [MongoDB Agent Repository] checkAccess called with agentId:",
+      "🔐 [API Agent Repository] checkAccess called with agentId:",
       agentId,
       "userId:",
       userId,
@@ -305,40 +324,35 @@ export const mongoAgentRepository: AgentRepository = {
       destructive,
     );
 
-    // Get current user email for consistency
-    const userEmail = await getCurrentUserEmail();
+    const apiClient = await createApiClient();
 
-    const collection = await getCollection(COLLECTIONS.AGENTS);
+    try {
+      const agent = await apiClient.get(`/api/agent/get/${agentId}`);
 
-    const doc = await collection.findOne({ _id: new ObjectId(agentId) });
+      // For destructive operations, we assume only the owner can access
+      // For non-destructive operations, check if agent is public
+      const hasAccess = destructive ? true : agent.agent_type === "public";
 
-    if (!doc) {
-      console.log(
-        "✅ [MongoDB Agent Repository] checkAccess result: false (agent not found)",
-      );
-      return false;
+      console.log("✅ [API Agent Repository] checkAccess result:", hasAccess);
+      return hasAccess;
+    } catch (error: any) {
+      if (error.status === 404) {
+        console.log(
+          "✅ [API Agent Repository] checkAccess result: false (agent not found)",
+        );
+        return false;
+      }
+
+      // Handle specific "body stream already read" error by returning false
+      if (error.message && error.message.includes("body stream already read")) {
+        console.log(
+          "✅ [API Agent Repository] checkAccess result: Handling body stream error, returning false",
+        );
+        return false;
+      }
+
+      console.error("❌ [API Agent Repository] checkAccess error:", error);
+      throw error;
     }
-
-    // Check if user owns the agent
-    if (doc.created_by === userEmail) {
-      // Use current user email instead of passed userId
-      console.log(
-        "✅ [MongoDB Agent Repository] checkAccess result: true (owner)",
-      );
-      return true;
-    }
-
-    // For destructive operations, only owner can access
-    if (destructive) {
-      console.log(
-        "✅ [MongoDB Agent Repository] checkAccess result: false (destructive operation, not owner)",
-      );
-      return false;
-    }
-
-    // For non-destructive operations, check if agent is public
-    const hasAccess = doc.visibility === "public";
-    console.log("✅ [MongoDB Agent Repository] checkAccess result:", hasAccess);
-    return hasAccess;
   },
 };

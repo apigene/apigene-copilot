@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  Lock,
-  Eye,
-  Globe,
-  Bookmark,
-  BookmarkCheck,
-  Trash2,
-  Loader2,
-} from "lucide-react";
+import { Lock, Eye, Globe, Trash2, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Button } from "ui/button";
@@ -62,12 +54,9 @@ interface ShareableActionsProps {
   type: "agent" | "workflow";
   visibility?: Visibility;
   isOwner: boolean;
-  isBookmarked?: boolean;
   editHref?: string;
   onVisibilityChange?: (visibility: Visibility) => void;
   isVisibilityChangeLoading?: boolean;
-  onBookmarkToggle?: (isBookmarked: boolean) => void;
-  isBookmarkToggleLoading?: boolean;
   onDelete?: () => void;
   isDeleteLoading?: boolean;
   renderActions?: () => React.ReactNode;
@@ -78,14 +67,11 @@ export function ShareableActions({
   type,
   visibility,
   isOwner,
-  isBookmarked = false,
   editHref,
   onVisibilityChange,
-  onBookmarkToggle,
   onDelete,
   renderActions,
   isVisibilityChangeLoading = false,
-  isBookmarkToggleLoading = false,
   isDeleteLoading = false,
   disabled = false,
 }: ShareableActionsProps) {
@@ -93,9 +79,8 @@ export function ShareableActions({
   const router = useRouter();
 
   const isAnyLoading = useMemo(
-    () =>
-      isVisibilityChangeLoading || isBookmarkToggleLoading || isDeleteLoading,
-    [isVisibilityChangeLoading, isBookmarkToggleLoading, isDeleteLoading],
+    () => isVisibilityChangeLoading || isDeleteLoading,
+    [isVisibilityChangeLoading, isDeleteLoading],
   );
 
   const VisibilityIcon = visibility ? VISIBILITY_ICONS[visibility] : null;
@@ -181,37 +166,6 @@ export function ShareableActions({
             </Tooltip>
           )}
         </>
-      )}
-
-      {/* Bookmark */}
-      {!isOwner && onBookmarkToggle && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-8 text-muted-foreground hover:text-foreground"
-              data-testid="bookmark-button"
-              disabled={isAnyLoading || disabled}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onBookmarkToggle(isBookmarked);
-              }}
-            >
-              {isBookmarkToggleLoading ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : isBookmarked ? (
-                <BookmarkCheck className="size-4" />
-              ) : (
-                <Bookmark className="size-4" />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            {t(isBookmarked ? "Agent.removeBookmark" : "Agent.addBookmark")}
-          </TooltipContent>
-        </Tooltip>
       )}
 
       {/* Edit Action */}

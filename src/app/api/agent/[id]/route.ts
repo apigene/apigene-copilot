@@ -1,7 +1,6 @@
 import { agentRepository } from "lib/db/repository";
 import { getSession } from "auth/server";
 import { z } from "zod";
-import { AgentUpdateSchema } from "app-types/agent";
 import { serverCache } from "lib/cache";
 import { CacheKeys } from "lib/cache/cache-keys";
 
@@ -39,7 +38,26 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const data = AgentUpdateSchema.parse(body);
+
+    // Convert API format to frontend format
+    const frontendData: any = {};
+    if (body.name !== undefined) frontendData.name = body.name;
+    if (body.description !== undefined)
+      frontendData.description = body.description;
+    if (body.icon !== undefined) {
+      frontendData.icon = body.icon
+        ? { type: "emoji" as const, value: body.icon }
+        : undefined;
+    }
+    if (body.instructions !== undefined) {
+      frontendData.instructions = {
+        systemPrompt: body.instructions,
+        mentions: [],
+      };
+    }
+    if (body.agent_type !== undefined) {
+      frontendData.visibility = body.agent_type;
+    }
 
     // Check access for write operations
     const hasAccess = await agentRepository.checkAccess(id, session.user.id);
@@ -53,10 +71,14 @@ export async function PUT(
       session.user.id,
     );
     if (existingAgent && existingAgent.userId !== session.user.id) {
-      data.visibility = existingAgent.visibility;
+      frontendData.visibility = existingAgent.visibility;
     }
 
-    const agent = await agentRepository.updateAgent(id, session.user.id, data);
+    const agent = await agentRepository.updateAgent(
+      id,
+      session.user.id,
+      frontendData,
+    );
     serverCache.delete(CacheKeys.agentInstructions(agent.id));
 
     return Response.json(agent);
