@@ -420,7 +420,6 @@ export default function EditAgent({
                 mentions={agent.instructions?.mentions || []}
                 mcps={agent.mcps || []}
                 context={agent.context || []}
-                isLoading={isLoadingTool}
                 disabled={isLoading}
                 hasEditAccess={hasEditAccess}
                 onChange={(mentions, mcps, context) =>
